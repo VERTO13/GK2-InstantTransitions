@@ -14,10 +14,13 @@ namespace InstantTransitions;
 // peleas y las escenas de historia (nodos Flow_*) se quedan como el juego: ahí la historia puede estar
 // acomodando cosas mientras la pantalla está negra.
 //
-// Cómo se sabe qué teletransporte es: quién llamó a PlayerController.Teleport. Las puertas son funciones de
-// LazyExpression (teleport a un objeto o a un punto); el mapa, MapPageWidget. Una expresión también podría
-// venir de un diálogo o de una escena: esas se dejan como el juego si hay una ventana abierta o si el juego
-// tiene tomado el control por una escena.
+// Cómo se sabe qué teletransporte es: quién llamó a PlayerController.Teleport. Casi todas las puertas son
+// funciones de LazyExpression (teleport a un objeto o a un punto); el mapa, MapPageWidget. Algunas puertas son
+// objetos con su propio script (p. ej. la salida de la torre del astrólogo, tp_RT_astrologer_tower_exit): su
+// nodo Flow_TeleportPlayer es el mismo que usan las escenas, así que cuenta como puerta solo si más arriba en la
+// misma llamada está PlayerInputHandler (el jugador la usó). Una expresión o un script también podrían venir de
+// un diálogo o de una escena: esos se dejan como el juego si hay una ventana abierta o si el juego tiene tomado
+// el control por una escena.
 //
 // Parches seguros (ver la lección de Crafting Queue): PlayerController.Teleport y UIBasicFade.FadeIn/FadeOut
 // no leen campos estáticos de clases del juego. Solo se cambian argumentos; el juego sigue haciendo lo suyo.
@@ -26,6 +29,7 @@ internal static class QuickDoors
     private static bool active;        // puerta del jugador en curso: sus fundidos se acortan
     private static float activeUntil;  // por si algo falla: nunca más de 15 s
     internal static bool LastWasQuick; // para el log de la puerta
+    internal static string LastWhy = ""; // qué teletransporte era, o por qué se dejó como el juego (para el log)
     internal static float LastTeleportAt = -100f; // cualquier teletransporte (la limpieza de después es de puerta, no de carga)
 
     public static void Apply(Harmony harmony)
@@ -65,9 +69,10 @@ internal static class QuickDoors
         LastTeleportAt = Time.realtimeSinceStartup;
         active = false;
         LastWasQuick = false;
+        LastWhy = "";
         try
         {
-            if (!Plugin.Enabled.Value || teleportData == null || teleportData.donNotFade || !PlayerInitiated())
+            if (!Plugin.Enabled.Value || teleportData == null || teleportData.donNotFade || !PlayerInitiated(out LastWhy))
                 return;
             active = true;
             activeUntil = Time.realtimeSinceStartup + 15f;
@@ -102,34 +107,68 @@ internal static class QuickDoors
             active = false; // el fundido de vuelta es lo último de la puerta
     }
 
-    // ¿Una puerta que usó el jugador, o un viaje desde el mapa? Se mira quién llamó a Teleport: el primero de la
-    // pila que se reconozca decide.
-    private static bool PlayerInitiated()
+    // ¿Una puerta que usó el jugador, o un viaje desde el mapa? Se mira quién llamó a Teleport, del más cercano al más
+    // lejano: el primero que se reconozca decide. `why` dice qué era (o por qué no), para el log de la puerta.
+    private static bool PlayerInitiated(out string why)
     {
+        why = "not a door or the map";
         StackFrame[] frames = new StackTrace(2, false).GetFrames();
         if (frames == null)
             return false;
+        bool script = false; // el nodo de teletransporte de un script: puerta solo si el jugador lo disparó
         foreach (StackFrame frame in frames)
         {
             for (Type t = frame.GetMethod()?.DeclaringType; t != null; t = t.DeclaringType) // las lambdas viven en tipos anidados
             {
+                if (script)
+                {
+                    if (t == typeof(PlayerInputHandler))
+                        return NothingElseGoingOn("scripted door", out why);
+                    continue;
+                }
                 if (t == typeof(MapPageWidget))
+                {
+                    why = "map";
                     return true;
+                }
                 if (t == typeof(LazyExpression))
-                    return NothingElseGoingOn();
-                if (t == typeof(FightingGameController) || t.Namespace == "GK2.FlowCanvasNodes")
+                    return NothingElseGoingOn("door", out why);
+                if (t == typeof(FightingGameController))
+                {
+                    why = "fight";
                     return false;
+                }
+                if (t == typeof(GK2.FlowCanvasNodes.Flow_TeleportPlayer))
+                {
+                    script = true;
+                    why = "a script the player didn't start";
+                    continue;
+                }
+                if (t.Namespace == "GK2.FlowCanvasNodes")
+                {
+                    why = "script " + t.Name; // peleas (Flow_StartFightById…) y escenas
+                    return false;
+                }
             }
         }
         return false;
     }
 
     // Una puerta se usa jugando: sin ventanas abiertas (un diálogo) y sin una escena con el control tomado.
-    private static bool NothingElseGoingOn()
+    private static bool NothingElseGoingOn(string what, out string why)
     {
         if (LazyWindowsStackController.ActiveWindow != null)
+        {
+            why = what + " with a window open";
             return false;
+        }
         PlayerController player = MainGame.Instance != null ? MainGame.PlayerController : null;
-        return player == null || player.IsControlEnabledByType(TakenControlType.ByCinematics);
+        if (player != null && !player.IsControlEnabledByType(TakenControlType.ByCinematics))
+        {
+            why = what + " during a cinematic";
+            return false;
+        }
+        why = what;
+        return true;
     }
 }

@@ -340,7 +340,7 @@ internal class DoorWatch : MonoBehaviour
         else
             parts = d.cleanup != null ? $"no fade; {Describe(d.cleanup)}" : "no fade, no clean-up";
         Plugin.Log.LogInfo($"[Door] {d.fromZone ?? "?"} -> {toZone ?? "?"} ({(sameScene ? "same scene" : $"scene {d.fromScene} -> {toScene}")}" +
-                           $"{(QuickDoors.LastWasQuick ? ", quick fades" : "")}): " +
+                           $"{(QuickDoors.LastWasQuick ? $", quick fades: {QuickDoors.LastWhy}" : QuickDoors.LastWhy.Length > 0 ? $", game's fades: {QuickDoors.LastWhy}" : "")}): " +
                            $"{Seconds(d.start, end):0.00} s = {parts} · longest frame {d.longestFrame:0.00} s ({d.slowFrames} over 0.1 s) · " +
                            $"GCs {GC.CollectionCount(0) - d.gcBefore} · managed {d.managedBefore} -> {ManagedMB()} MB · Unity {d.unityBefore} -> {UnityMB()} MB · " +
                            $"game process {d.processBefore} -> {ProcessMB()} MB");
