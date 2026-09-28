@@ -26,6 +26,7 @@ internal static class QuickDoors
     private static bool active;        // puerta del jugador en curso: sus fundidos se acortan
     private static float activeUntil;  // por si algo falla: nunca más de 15 s
     internal static bool LastWasQuick; // para el log de la puerta
+    internal static float LastTeleportAt = -100f; // cualquier teletransporte (la limpieza de después es de puerta, no de carga)
 
     public static void Apply(Harmony harmony)
     {
@@ -61,6 +62,7 @@ internal static class QuickDoors
 
     private static void BeforeTeleport(TeleportDataBase teleportData)
     {
+        LastTeleportAt = Time.realtimeSinceStartup;
         active = false;
         LastWasQuick = false;
         try

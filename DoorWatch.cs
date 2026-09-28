@@ -54,6 +54,9 @@ internal class DoorWatch : MonoBehaviour
     // ¿Hay una puerta en curso? (la limpieza fuera de una puerta es la de cargar una partida)
     internal static bool InDoor => instance != null && instance.door != null;
 
+    // Donde corre la precarga (una corrutina de este componente).
+    internal static MonoBehaviour Host => instance;
+
     private void Start()
     {
         instance = this;
@@ -94,7 +97,7 @@ internal class DoorWatch : MonoBehaviour
 
     private static bool noProcessMemory;
 
-    private static long ProcessMB()
+    internal static long ProcessMB()
     {
         if (noProcessMemory)
             return -1;
@@ -112,6 +115,7 @@ internal class DoorWatch : MonoBehaviour
 
     private void Update()
     {
+        Preload.Watch();
         try
         {
             Tick();

@@ -25,6 +25,8 @@ public sealed class Plugin : BaseUnityPlugin
     internal static ConfigEntry<int> FullWhenGrownMB;
     internal static ConfigEntry<float> FadeSeconds;
     internal static ConfigEntry<float> BlackPauseSeconds;
+    internal static ConfigEntry<bool> PreloadPlaces;
+    internal static ConfigEntry<float> PreloadMaxSeconds;
 
     private void Awake()
     {
@@ -41,6 +43,11 @@ public sealed class Plugin : BaseUnityPlugin
         BlackPauseSeconds = Config.Bind("Doors", "BlackPauseSeconds", 0f,
             "Pause with the screen fully black before you are moved, on doors you use and on map travel. The game: 0.3. " +
             "Fights and story scenes keep the game's own fades and pause.");
+        PreloadPlaces = Config.Bind("Loading", "PreloadPlaces", true,
+            "While a save loads, also load the pieces of the whole map that the game's own preload leaves out, so the first " +
+            "visit to each place is as quick as the next ones. The loading screen takes a little longer and the game uses more memory.");
+        PreloadMaxSeconds = Config.Bind("Loading", "PreloadMaxSeconds", 20f,
+            "The extra preload never makes the loading screen longer than this (seconds); what is left loads as usual.");
         Harmony harmony = new Harmony(Guid);
         Cleanup.Apply(harmony);
         QuickDoors.Apply(harmony);

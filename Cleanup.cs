@@ -73,12 +73,16 @@ internal static class Cleanup
         return $"next full one in {minutes:0.0} min or +{mb} MB";
     }
 
+    private const string Loading = "loading";
+
     private static string DueReason()
     {
         if (!Plugin.Enabled.Value)
             return "mod off";
-        if (!DoorWatch.InDoor)
-            return "loading"; // cargar una partida: la pantalla de carga ya lo tapa
+        // Fuera de una puerta = al cargar una partida (la pantalla de carga ya lo tapa). Un teletransporte que el
+        // vigilante todavía no vio (la cortina ya estaba negra) sigue siendo puerta: lo dice el parche de Teleport.
+        if (!DoorWatch.InDoor && Time.realtimeSinceStartup - QuickDoors.LastTeleportAt > 10f)
+            return Loading;
         if (!anyFull)
             return "first one";
         float minutes = (Time.realtimeSinceStartup - lastFullAt) / 60f;
@@ -120,6 +124,9 @@ internal static class Cleanup
     private static UniTask Timed(Run run)
     {
         var done = new UniTaskCompletionSource();
+        Action complete = () => done.TrySetResult();
+        // Al cargar una partida, después de la limpieza va la precarga de las piezas del mapa (la carga la espera).
+        Action after = run.why == Loading && Plugin.PreloadPlaces.Value ? () => StartPreload(complete) : complete;
         long t0 = Stopwatch.GetTimestamp();
         if (!run.full)
         {
@@ -156,7 +163,7 @@ internal static class Cleanup
             }
             finally
             {
-                done.TrySetResult();
+                after();
             }
             return done.Task;
         }
@@ -173,10 +180,23 @@ internal static class Cleanup
             }
             finally
             {
-                done.TrySetResult(); // la puerta sigue pase lo que pase
+                after(); // la puerta (o la carga) sigue pase lo que pase
             }
         };
         return done.Task;
+    }
+
+    private static void StartPreload(Action complete)
+    {
+        try
+        {
+            Preload.Start(complete);
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.LogWarning("[Preload] " + e.Message);
+            complete();
+        }
     }
 
     private static void GcOnly(Run run, long t0)
