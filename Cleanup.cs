@@ -224,6 +224,26 @@ internal static class Cleanup
         DoorWatch.CleanupFinished(run);
     }
 
+    // Para la precarga: quitar ya los componentes de editor de lo recién cargado (cronometrado).
+    internal static int StripNow(out double ms)
+    {
+        long t = Stopwatch.GetTimestamp();
+        int stripped;
+        try { stripped = Strip(); }
+        catch (Exception e) { Plugin.Log.LogWarning("[Preload] strip: " + e.Message); stripped = -1; }
+        ms = Ms(t, Stopwatch.GetTimestamp());
+        return stripped;
+    }
+
+    // Después de la limpieza y la precarga de una carga de partida: lo que la precarga dejó en memoria es a propósito,
+    // así que esa memoria es la referencia (si no, la siguiente puerta la tomaba como crecimiento y limpiaba todo).
+    internal static void ResetBaseline()
+    {
+        anyFull = true;
+        lastFullAt = Time.realtimeSinceStartup;
+        memoryAtLastFull = MemoryMB();
+    }
+
     // Lo mismo que EditorOnlyComponentStripper.StripAll (buscar cada tipo en todo lo cargado, también lo
     // inactivo, y destruirlo; el marcador de actualización de grafo se desactiva antes), pero contando lo que
     // encuentra: así el log dice cuántos se juntan entre una limpieza completa y otra. Si el juego cambiara ese

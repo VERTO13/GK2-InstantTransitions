@@ -31,6 +31,9 @@ internal class DoorWatch : MonoBehaviour
     private static readonly FieldInfo Blackout = AccessTools.Field(typeof(UIBasicFade), "blackoutCanvas");
 
     private UIFade fade;
+    private UILoadingOverlay overlay;   // la pantalla de carga: se cronometra cada vez que se muestra
+    private float nextOverlayLookup;
+    private long loadStart;
     private CanvasGroup curtain;
     private float nextLookup;
     private string lastError;
@@ -118,6 +121,14 @@ internal class DoorWatch : MonoBehaviour
         Preload.Watch();
         try
         {
+            WatchLoading();
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.LogDebug("Loading watch: " + e.Message);
+        }
+        try
+        {
             Tick();
         }
         catch (Exception e)
@@ -175,6 +186,29 @@ internal class DoorWatch : MonoBehaviour
         Report(door);
         door = null;
         QuickDoors.DoorEnded();
+    }
+
+    // Cuánto dura la pantalla de carga (al cargar una partida o al ir a otra escena), y cuánto de eso fue la precarga.
+    private void WatchLoading()
+    {
+        if (overlay == null && Time.unscaledTime >= nextOverlayLookup)
+        {
+            nextOverlayLookup = Time.unscaledTime + 1f;
+            overlay = GuiElements?.GetValue(null) is Dictionary<Type, ILazyGUIElement> elements
+                      && elements.TryGetValue(typeof(UILoadingOverlay), out ILazyGUIElement e) ? e as UILoadingOverlay : null;
+        }
+        bool shown = overlay != null && overlay.IsShown;
+        if (shown && loadStart == 0)
+        {
+            loadStart = Now();
+            Preload.LastSeconds = 0;
+        }
+        else if (!shown && loadStart != 0)
+        {
+            Plugin.Log.LogInfo($"[Load] loading screen {Seconds(loadStart, Now()):0.0} s" +
+                               (Preload.LastSeconds > 0 ? $", of which the Smooth Doors preload {Preload.LastSeconds:0.0} s" : ""));
+            loadStart = 0;
+        }
     }
 
     // La limpieza terminó (o se saltó): si fue durante una puerta, cuenta para esa puerta; si no (cargar una
