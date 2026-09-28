@@ -40,7 +40,11 @@ not allowed. When the code goes public, switch to the MIT text Crafting Queue us
 
 > BepInEx by the BepInEx team (LGPL-2.1): https://github.com/BepInEx/BepInEx - bundled unmodified in the "with BepInEx" file, as its license allows, and it keeps its own license. Everything else in Instant Transitions is original work.
 
-- **Donations:** once published, opt this mod into Donation Points ("Opt In Your Mods") when it shows up in that list.
+- **Donations:** donation button on (General → Extra options), like Crafting Queue. Tagged "Nexus Mods Turns 25"
+  (the 25th Anniversary Charity Mod Drive: the mod's Donation Points go to Doctors Without Borders, matched by Nexus);
+  the mod only earns them once it's opted into the mod rewards program (the "Opt-in" link on the mod page).
+
+Published 2026-09-28.
 
 ## Files (Main files)
 
