@@ -75,40 +75,64 @@ internal static class Preload
     internal static void Start(Action finished)
     {
         bool called = false;
-        Action once = () =>
+        Action once = null;
+        once = () =>
         {
             if (called)
                 return;
             called = true;
-            pending = null;
-            LoadingLabel.Hide();
-            finished();
+            if (ReferenceEquals(pending, once))
+                pending = null; // solo si sigue siendo la suya: otra precarga pudo empezar después
+            try
+            {
+                LoadingLabel.Hide();
+            }
+            finally
+            {
+                finished(); // la carga sigue aunque el texto no se pudiera quitar
+            }
         };
-        MonoBehaviour host = DoorWatch.Host;
-        if (host == null)
+        try
         {
-            once();
-            return;
+            MonoBehaviour host = DoorWatch.Host;
+            if (host == null)
+            {
+                once();
+                return;
+            }
+            if (SystemInfo.systemMemorySize > 0 && SystemInfo.systemMemorySize < 7000)
+            {
+                Plugin.Log.LogInfo($"[Preload] skipped: {SystemInfo.systemMemorySize} MB of RAM is not enough to keep the whole map loaded.");
+                once();
+                return;
+            }
+            pending = once;
+            giveUpAt = Time.realtimeSinceStartup + Mathf.Max(1f, Plugin.PreloadMaxSeconds.Value) + 10f;
+            host.StartCoroutine(Run(once));
         }
-        if (SystemInfo.systemMemorySize > 0 && SystemInfo.systemMemorySize < 7000)
+        catch (Exception e)
         {
-            Plugin.Log.LogInfo($"[Preload] skipped: {SystemInfo.systemMemorySize} MB of RAM is not enough to keep the whole map loaded.");
+            Plugin.Log.LogWarning("[Preload] could not start: " + e.Message);
             once();
-            return;
         }
-        pending = once;
-        giveUpAt = Time.realtimeSinceStartup + Mathf.Max(1f, Plugin.PreloadMaxSeconds.Value) + 10f;
-        host.StartCoroutine(Run(once));
     }
 
     // Cada cuadro (DoorWatch): si la corrutina se hubiera detenido sin avisar, la carga no se queda esperando.
     internal static void Watch()
     {
         if (pending != null && Time.realtimeSinceStartup > giveUpAt)
-        {
-            Plugin.Log.LogWarning("[Preload] did not finish in time; the game goes on.");
-            pending();
-        }
+            GiveUp("did not finish in time");
+    }
+
+    // La carga sigue sin esperar a la precarga; la corrutina, si todavía corre, lo nota y se detiene sin tocar la pantalla.
+    // También si su componente se apaga o se destruye: Unity detiene la corrutina sin correr su finally.
+    internal static void GiveUp(string why)
+    {
+        Action waiting = pending;
+        if (waiting == null)
+            return;
+        Plugin.Log.LogWarning($"[Preload] {why}; the game goes on.");
+        waiting();
     }
 
     private static IEnumerator Run(Action finished)
@@ -125,6 +149,13 @@ internal static class Preload
             bool stopped = false;
             while (next < jobs.Count || inFlight.Count > 0)
             {
+                if (!ReferenceEquals(pending, finished))
+                {
+                    // Ya se dio por terminada (GiveUp) y el juego siguió: nada de congelar ni de volver a mostrar el texto.
+                    Plugin.Log.LogInfo($"[Preload] map {scene ?? "?"}: given up after {total.Elapsed.TotalSeconds:0.00} s · objects {counts[Kind.Object]}" +
+                                       $" · building parts {counts[Kind.ConstructorPart]} · scenery {counts[Kind.Baked]}");
+                    yield break;
+                }
                 if (total.Elapsed.TotalSeconds > Plugin.PreloadMaxSeconds.Value)
                 {
                     stopped = true; // lo que sigue en camino termina solo; su copia de reserva ya no se agrega

@@ -36,8 +36,8 @@ internal static class LoadingLabel
             {
                 shownPercent = percent;
                 text.text = string.Format(Message(), percent);
+                Place(); // al aparecer y cuando cambia el número: no hace falta buscar los textos de la pantalla cada cuadro
             }
-            Place();
             if (!root.activeSelf)
                 root.SetActive(true);
         }

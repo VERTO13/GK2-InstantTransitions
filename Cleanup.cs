@@ -97,27 +97,46 @@ internal static class Cleanup
         // Apagado (se puede cambiar jugando): la limpieza original del juego, tal cual.
         if (!Plugin.Enabled.Value)
             return true;
-        string why;
         try
         {
-            why = DueReason();
+            string why;
+            try
+            {
+                why = DueReason();
+            }
+            catch (Exception e)
+            {
+                Plugin.Log.LogWarning("Clean-up decision: " + e.Message);
+                why = "error deciding";
+            }
+            if (why != null)
+                __result = Timed(new Run { full = true, why = why });
+            else if (!GarbageCollector.isIncremental)
+                __result = Timed(new Run { full = false }); // sin recolección por partes: al menos la de basura
+            else
+            {
+                try { DoorWatch.CleanupFinished(new Run { full = false }); }
+                catch (Exception e) { Plugin.Log.LogWarning("Clean-up: " + e.Message); }
+                __result = UniTask.CompletedTask; // la puerta sigue sin congelarse
+            }
+            return false;
         }
         catch (Exception e)
         {
-            Plugin.Log.LogWarning("Clean-up decision: " + e.Message);
-            why = "error deciding";
+            // Algo inesperado: la limpieza del propio juego, para que ni la puerta ni la carga se queden esperando. Solo
+            // puede llegar aquí antes de que empiece nada de lo nuestro, porque Timed atrapa cada paso que hace algo: así
+            // nunca se limpia dos veces. Todo paso nuevo en Timed, StartPreload o Preload.Start necesita su propio catch.
+            Plugin.Log.LogWarning("Clean-up: " + e.Message + " (the game's own clean-up runs instead)");
+            HideLabel();
+            return true;
         }
-        if (why != null)
-            __result = Timed(new Run { full = true, why = why });
-        else if (!GarbageCollector.isIncremental)
-            __result = Timed(new Run { full = false }); // sin recolección por partes: al menos la de basura
-        else
-        {
-            try { DoorWatch.CleanupFinished(new Run { full = false }); }
-            catch (Exception e) { Plugin.Log.LogWarning("Clean-up: " + e.Message); }
-            __result = UniTask.CompletedTask; // la puerta sigue sin congelarse
-        }
-        return false;
+    }
+
+    // Aquí dentro para que ni una clase rota por una actualización del juego pueda escapar de un catch.
+    private static void HideLabel()
+    {
+        try { LoadingLabel.Hide(); }
+        catch (Exception e) { Plugin.Log.LogDebug("Loading label: " + e.Message); }
     }
 
     private static double Ms(long from, long to) => (to - from) * 1000.0 / Stopwatch.Frequency;
@@ -200,7 +219,9 @@ internal static class Cleanup
         }
         catch (Exception e)
         {
+            // Preload.Start atrapa lo suyo; esto solo pasa si la precarga ni siquiera se pudo cargar (juego actualizado).
             Plugin.Log.LogWarning("[Preload] " + e.Message);
+            HideLabel();
             complete();
         }
     }

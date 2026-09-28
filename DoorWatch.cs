@@ -38,6 +38,7 @@ internal class DoorWatch : MonoBehaviour
     private CanvasGroup curtain;
     private float nextLookup;
     private string lastError;
+    private bool quitting;
 
     // La puerta en curso (null = ninguna).
     private sealed class Door
@@ -58,8 +59,26 @@ internal class DoorWatch : MonoBehaviour
     // ¿Hay una puerta en curso? (la limpieza fuera de una puerta es la de cargar una partida)
     internal static bool InDoor => instance != null && instance.door != null;
 
-    // Donde corre la precarga (una corrutina de este componente).
-    internal static MonoBehaviour Host => instance;
+    // Donde corre la precarga (una corrutina de este componente); null si ahora no podría correrla.
+    internal static MonoBehaviour Host => instance != null && instance.isActiveAndEnabled ? instance : null;
+
+    private void OnApplicationQuit() => quitting = true;
+
+    // Si este componente se apaga o se destruye, Unity detiene la precarga sin avisar y el vigilante (Update) tampoco
+    // corre: la carga de la partida no se queda esperándola. Al cerrar el juego no hace falta.
+    private void OnDisable()
+    {
+        if (quitting)
+            return;
+        try
+        {
+            Preload.GiveUp("its host was turned off");
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.LogDebug("Preload give-up: " + e.Message);
+        }
+    }
 
     private void Start()
     {
@@ -120,7 +139,14 @@ internal class DoorWatch : MonoBehaviour
 
     private void Update()
     {
-        Preload.Watch();
+        try
+        {
+            Preload.Watch();
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.LogDebug("Preload watch: " + e.Message);
+        }
         Notice.Tick();
         try
         {
