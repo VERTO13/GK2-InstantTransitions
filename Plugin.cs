@@ -32,8 +32,9 @@ public sealed class Plugin : BaseUnityPlugin
     {
         Log = Logger;
         Enabled = Config.Bind("Doors", "Enabled", true,
-            "Doors skip the game's full memory clean-up (the freeze while the screen is black) unless one is due. " +
-            "false = every door does it, like the unmodded game. Doors are measured in the log either way.");
+            "Doors skip the game's full memory clean-up (the freeze while the screen is black) unless one is due, fade faster " +
+            "and preload places. false = the mod changes nothing at all and only measures doors in the log " +
+            "(restart the game after changing it).");
         FullEveryMinutes = Config.Bind("Doors", "FullCleanupEveryMinutes", 10f,
             "A door still gets the game's full clean-up once this many minutes have passed since the last one.");
         FullWhenGrownMB = Config.Bind("Doors", "FullCleanupWhenMemoryGrowsMB", 300,
@@ -48,9 +49,14 @@ public sealed class Plugin : BaseUnityPlugin
             "visit to each place is as quick as the next ones. The loading screen takes a little longer and the game uses more memory.");
         PreloadMaxSeconds = Config.Bind("Loading", "PreloadMaxSeconds", 20f,
             "The extra preload never makes the loading screen longer than this (seconds); what is left loads as usual.");
-        Harmony harmony = new Harmony(Guid);
-        Cleanup.Apply(harmony);
-        QuickDoors.Apply(harmony);
+        // Apagado no se parcha nada: el juego queda exactamente como sin el mod (y otro mod de puertas funciona igual,
+        // sin que este se le cruce), y solo queda el vigilante que mide cada puerta.
+        if (Enabled.Value)
+        {
+            Harmony harmony = new Harmony(Guid);
+            Cleanup.Apply(harmony);
+            QuickDoors.Apply(harmony);
+        }
         gameObject.AddComponent<DoorWatch>();
     }
 }

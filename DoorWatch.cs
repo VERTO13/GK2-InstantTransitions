@@ -69,7 +69,7 @@ internal class DoorWatch : MonoBehaviour
                            (Plugin.Enabled.Value
                                ? $"doors skip the full clean-up unless one is due (every {Plugin.FullEveryMinutes.Value:0.#} min or +{Plugin.FullWhenGrownMB.Value} MB); " +
                                  $"door fades {Plugin.FadeSeconds.Value:0.##} s, pause in black {Plugin.BlackPauseSeconds.Value:0.##} s. "
-                               : "off: every door does the full clean-up, like the unmodded game. ") +
+                               : "off: measuring doors only, the game is not changed at all. ") +
                            $"Unity {Application.unityVersion}, incremental GC {GarbageCollector.isIncremental}, " +
                            $"system RAM {SystemInfo.systemMemorySize} MB, {Chainloader.PluginInfos.Count} BepInEx plugins: " +
                            string.Join(", ", Chainloader.PluginInfos.Values.Select(p => p.Metadata.Name)));
@@ -281,7 +281,7 @@ internal class DoorWatch : MonoBehaviour
             double fadeIn = Seconds(d.start, d.blackAt), black = Seconds(d.blackAt, d.clearAt), fadeOut = Seconds(d.clearAt, end);
             string inside = d.cleanup != null
                 ? $" ({Describe(d.cleanup)}; then until the fade back {Seconds(d.cleanupEnd, d.clearAt):0.00})"
-                : " (no clean-up)";
+                : Plugin.Enabled.Value ? " (no clean-up)" : " (the game's own clean-up, not timed)";
             parts = $"fade in {fadeIn:0.00} + black {black:0.00}{inside} + fade out {fadeOut:0.00}";
         }
         else
