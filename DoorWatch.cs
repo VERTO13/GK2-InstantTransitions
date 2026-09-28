@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using BepInEx.Bootstrap;
 using HarmonyLib;
 using LazyBearTechnology;
@@ -18,10 +19,10 @@ namespace SmoothDoors;
 // devuelve y la pantalla ya no está negra. En medio, la opacidad de la cortina negra del juego (UIFade)
 // dice cuándo terminó de oscurecer y cuándo empezó a aclarar.
 //
-// Una línea por puerta en el log:
-//   [Door] Yard -> Church (same scene): 1.93 s = fade in 0.31 + black 1.31 (clean-up 1.05: unload 0.62,
-//   GC 0.41, strip 0.02; loading the place 0.24) + fade out 0.31 · longest frame 0.64 s · managed
-//   812 -> 790 MB · Unity 1450 -> 1320 MB
+// Una línea por puerta en el log, p. ej.:
+//   [Door] home -> yard (same scene): 0.83 s = fade in 0.28 + black 0.52 (clean-up skipped, next full one in
+//   7.5 min or +280 MB; then until the fade back 0.51) + fade out 0.03 · longest frame 0.21 s (1 over 0.1 s) ·
+//   GCs 0 · managed 413 -> 415 MB · Unity 958 -> 962 MB · game process 2210 -> 2215 MB
 internal class DoorWatch : MonoBehaviour
 {
     private const float Black = 0.99f;
@@ -50,11 +51,17 @@ internal class DoorWatch : MonoBehaviour
     private Door door;
     private static DoorWatch instance;
 
+    // ¿Hay una puerta en curso? (la limpieza fuera de una puerta es la de cargar una partida)
+    internal static bool InDoor => instance != null && instance.door != null;
+
     private void Start()
     {
         instance = this;
         // Aquí y no en Awake: para entonces BepInEx ya cargó todos los mods (para los reportes: cuántos hay).
-        Plugin.Log.LogInfo($"{Plugin.Name} {Plugin.Version}: measuring doors (the game behaves exactly as without the mod). " +
+        Plugin.Log.LogInfo($"{Plugin.Name} {Plugin.Version}: " +
+                           (Plugin.Enabled.Value
+                               ? $"doors skip the full clean-up unless one is due (every {Plugin.FullEveryMinutes.Value:0.#} min or +{Plugin.FullWhenGrownMB.Value} MB). "
+                               : "off: every door does the full clean-up, like the unmodded game. ") +
                            $"Unity {Application.unityVersion}, incremental GC {GarbageCollector.isIncremental}, " +
                            $"system RAM {SystemInfo.systemMemorySize} MB, {Chainloader.PluginInfos.Count} BepInEx plugins: " +
                            string.Join(", ", Chainloader.PluginInfos.Values.Select(p => p.Metadata.Name)));
@@ -64,22 +71,42 @@ internal class DoorWatch : MonoBehaviour
 
     private static double Seconds(long from, long to) => (to - from) / (double)Stopwatch.Frequency;
 
-    private static long ManagedMB() => GC.GetTotalMemory(false) / (1024 * 1024);
+    internal static long ManagedMB() => GC.GetTotalMemory(false) / (1024 * 1024);
 
-    private static long UnityMB() => Profiler.GetTotalAllocatedMemoryLong() / (1024 * 1024);
+    internal static long UnityMB() => Profiler.GetTotalAllocatedMemoryLong() / (1024 * 1024);
 
-    // La memoria del proceso entero (lo que se ve en el Administrador de tareas): de eso se quejan los jugadores.
+    // La memoria privada del proceso entero (la columna "Memoria" del Administrador de tareas): de eso se quejan
+    // los jugadores. Process.PrivateMemorySize64 da 0 en el Mono del juego; se pregunta directo a Windows.
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MemoryCounters
+    {
+        public uint cb, PageFaultCount;
+        public UIntPtr PeakWorkingSetSize, WorkingSetSize, QuotaPeakPagedPoolUsage, QuotaPagedPoolUsage,
+            QuotaPeakNonPagedPoolUsage, QuotaNonPagedPoolUsage, PagefileUsage, PeakPagefileUsage, PrivateUsage;
+    }
+
+    [DllImport("kernel32.dll", EntryPoint = "K32GetProcessMemoryInfo")]
+    private static extern bool GetProcessMemoryInfo(IntPtr process, out MemoryCounters counters, uint size);
+
+    [DllImport("kernel32.dll")]
+    private static extern IntPtr GetCurrentProcess();
+
+    private static bool noProcessMemory;
+
     private static long ProcessMB()
     {
+        if (noProcessMemory)
+            return -1;
         try
         {
-            using Process p = Process.GetCurrentProcess();
-            return p.PrivateMemorySize64 / (1024 * 1024);
+            if (GetProcessMemoryInfo(GetCurrentProcess(), out MemoryCounters c, (uint)Marshal.SizeOf(typeof(MemoryCounters))))
+                return (long)(c.PrivateUsage.ToUInt64() / (1024 * 1024));
         }
         catch
         {
-            return -1;
+            noProcessMemory = true; // sin Windows (o sin esa función): no se vuelve a intentar
         }
+        return -1;
     }
 
     private void Update()
@@ -101,7 +128,8 @@ internal class DoorWatch : MonoBehaviour
 
     private void Tick()
     {
-        PlayerController player = MainGame.PlayerController;
+        // En el menú principal todavía no hay juego: MainGame.PlayerController fallaría.
+        PlayerController player = MainGame.Instance != null ? MainGame.PlayerController : null;
         if (player == null || MainGame.PlayerData == null)
         {
             door = null; // menú principal o cargando: aquí no hay puertas
@@ -143,7 +171,8 @@ internal class DoorWatch : MonoBehaviour
         door = null;
     }
 
-    // La limpieza terminó: si fue durante una puerta, cuenta para esa puerta; si no (cargar una partida), va sola.
+    // La limpieza terminó (o se saltó): si fue durante una puerta, cuenta para esa puerta; si no (cargar una
+    // partida), va sola.
     internal static void CleanupFinished(Cleanup.Run run)
     {
         Door d = instance != null ? instance.door : null;
@@ -153,11 +182,20 @@ internal class DoorWatch : MonoBehaviour
             d.cleanupEnd = Now();
             return;
         }
-        Plugin.Log.LogInfo($"[Clean-up] outside a door (loading a save?): {Describe(run)} · managed {ManagedMB()} MB · Unity {UnityMB()} MB · game process {ProcessMB()} MB");
+        Plugin.Log.LogInfo($"[Clean-up] outside a door (loading a save?): {Describe(run)} · managed {ManagedMB()} MB · Unity {UnityMB()} MB · " +
+                           $"game process {ProcessMB()} MB");
     }
 
-    private static string Describe(Cleanup.Run r) =>
-        $"unload {r.unloadMs / 1000:0.00} s, GC {r.gcMs / 1000:0.00} s, strip {r.stripMs / 1000:0.00} s" + (r.failed ? " (with errors)" : "");
+    private static string Describe(Cleanup.Run r)
+    {
+        string errors = r.failed ? " (with errors)" : "";
+        if (r.full)
+            return $"full clean-up {r.TotalMs / 1000:0.00} s ({r.why}): unload {r.unloadMs / 1000:0.00}, GC {r.gcMs / 1000:0.00}, " +
+                   $"strip {r.stripMs / 1000:0.00}" + (r.stripped >= 0 ? $" ({r.stripped} editor components)" : "") + errors;
+        if (r.gcMs > 0)
+            return $"GC only {r.gcMs / 1000:0.00} s (the game has no incremental GC){errors}";
+        return "clean-up skipped, " + Cleanup.NextFull();
+    }
 
     private void Report(Door d)
     {
@@ -170,13 +208,12 @@ internal class DoorWatch : MonoBehaviour
         {
             double fadeIn = Seconds(d.start, d.blackAt), black = Seconds(d.blackAt, d.clearAt), fadeOut = Seconds(d.clearAt, end);
             string inside = d.cleanup != null
-                ? $" (clean-up {(d.cleanup.unloadMs + d.cleanup.gcMs + d.cleanup.stripMs) / 1000:0.00}: {Describe(d.cleanup)}; " +
-                  $"after it, until the fade back {Seconds(d.cleanupEnd, d.clearAt):0.00})"
+                ? $" ({Describe(d.cleanup)}; then until the fade back {Seconds(d.cleanupEnd, d.clearAt):0.00})"
                 : " (no clean-up)";
             parts = $"fade in {fadeIn:0.00} + black {black:0.00}{inside} + fade out {fadeOut:0.00}";
         }
         else
-            parts = d.cleanup != null ? $"no fade; clean-up: {Describe(d.cleanup)}" : "no fade, no clean-up";
+            parts = d.cleanup != null ? $"no fade; {Describe(d.cleanup)}" : "no fade, no clean-up";
         Plugin.Log.LogInfo($"[Door] {d.fromZone ?? "?"} -> {toZone ?? "?"} ({(sameScene ? "same scene" : $"scene {d.fromScene} -> {toScene}")}): " +
                            $"{Seconds(d.start, end):0.00} s = {parts} · longest frame {d.longestFrame:0.00} s ({d.slowFrames} over 0.1 s) · " +
                            $"GCs {GC.CollectionCount(0) - d.gcBefore} · managed {d.managedBefore} -> {ManagedMB()} MB · Unity {d.unityBefore} -> {UnityMB()} MB · " +
