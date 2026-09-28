@@ -1,0 +1,15 @@
+# Build output
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.idea/
+
+# Never commit game or third-party binaries
+*.dll
+*.pdb
+*.exe
+
+# Local notes / logs
+*.log
