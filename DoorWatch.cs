@@ -60,7 +60,8 @@ internal class DoorWatch : MonoBehaviour
         // Aquí y no en Awake: para entonces BepInEx ya cargó todos los mods (para los reportes: cuántos hay).
         Plugin.Log.LogInfo($"{Plugin.Name} {Plugin.Version}: " +
                            (Plugin.Enabled.Value
-                               ? $"doors skip the full clean-up unless one is due (every {Plugin.FullEveryMinutes.Value:0.#} min or +{Plugin.FullWhenGrownMB.Value} MB). "
+                               ? $"doors skip the full clean-up unless one is due (every {Plugin.FullEveryMinutes.Value:0.#} min or +{Plugin.FullWhenGrownMB.Value} MB); " +
+                                 $"door fades {Plugin.FadeSeconds.Value:0.##} s, pause in black {Plugin.BlackPauseSeconds.Value:0.##} s. "
                                : "off: every door does the full clean-up, like the unmodded game. ") +
                            $"Unity {Application.unityVersion}, incremental GC {GarbageCollector.isIncremental}, " +
                            $"system RAM {SystemInfo.systemMemorySize} MB, {Chainloader.PluginInfos.Count} BepInEx plugins: " +
@@ -169,6 +170,7 @@ internal class DoorWatch : MonoBehaviour
             return; // sigue la puerta (o el fundido de vuelta)
         Report(door);
         door = null;
+        QuickDoors.DoorEnded();
     }
 
     // La limpieza terminó (o se saltó): si fue durante una puerta, cuenta para esa puerta; si no (cargar una
@@ -214,7 +216,8 @@ internal class DoorWatch : MonoBehaviour
         }
         else
             parts = d.cleanup != null ? $"no fade; {Describe(d.cleanup)}" : "no fade, no clean-up";
-        Plugin.Log.LogInfo($"[Door] {d.fromZone ?? "?"} -> {toZone ?? "?"} ({(sameScene ? "same scene" : $"scene {d.fromScene} -> {toScene}")}): " +
+        Plugin.Log.LogInfo($"[Door] {d.fromZone ?? "?"} -> {toZone ?? "?"} ({(sameScene ? "same scene" : $"scene {d.fromScene} -> {toScene}")}" +
+                           $"{(QuickDoors.LastWasQuick ? ", quick fades" : "")}): " +
                            $"{Seconds(d.start, end):0.00} s = {parts} · longest frame {d.longestFrame:0.00} s ({d.slowFrames} over 0.1 s) · " +
                            $"GCs {GC.CollectionCount(0) - d.gcBefore} · managed {d.managedBefore} -> {ManagedMB()} MB · Unity {d.unityBefore} -> {UnityMB()} MB · " +
                            $"game process {d.processBefore} -> {ProcessMB()} MB");

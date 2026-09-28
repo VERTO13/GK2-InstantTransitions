@@ -23,6 +23,8 @@ public sealed class Plugin : BaseUnityPlugin
     internal static ConfigEntry<bool> Enabled;
     internal static ConfigEntry<float> FullEveryMinutes;
     internal static ConfigEntry<int> FullWhenGrownMB;
+    internal static ConfigEntry<float> FadeSeconds;
+    internal static ConfigEntry<float> BlackPauseSeconds;
 
     private void Awake()
     {
@@ -34,7 +36,14 @@ public sealed class Plugin : BaseUnityPlugin
             "A door still gets the game's full clean-up once this many minutes have passed since the last one.");
         FullWhenGrownMB = Config.Bind("Doors", "FullCleanupWhenMemoryGrowsMB", 300,
             "Or sooner: once the game's memory has grown this much (MB) since the last full clean-up.");
-        Cleanup.Apply(new Harmony(Guid));
+        FadeSeconds = Config.Bind("Doors", "FadeSeconds", 0.15f,
+            "Length of each fade (to black and back) on doors you use and on map travel. The game: 0.3.");
+        BlackPauseSeconds = Config.Bind("Doors", "BlackPauseSeconds", 0f,
+            "Pause with the screen fully black before you are moved, on doors you use and on map travel. The game: 0.3. " +
+            "Fights and story scenes keep the game's own fades and pause.");
+        Harmony harmony = new Harmony(Guid);
+        Cleanup.Apply(harmony);
+        QuickDoors.Apply(harmony);
         gameObject.AddComponent<DoorWatch>();
     }
 }
