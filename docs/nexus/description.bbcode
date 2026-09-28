@@ -1,0 +1,59 @@
+[center][size=5][b][color=#ffd966]Instant Transitions[/color][/b][/size]
+[size=3]Doors and map travel in about 0.3 seconds, even the first time you enter a place.[/size][/center]
+
+Every door in Graveyard Keeper 2 freezes the game with the screen black for 1 to 2 seconds, and longer the more mods you have. Instant Transitions takes that down to about [b]0.3 seconds[/b].
+
+[center][img]https://raw.githubusercontent.com/VERTO13/GK2-InstantTransitions/main/docs/images/doors-vs-vanilla.gif[/img][/center]
+
+[size=4][b][color=#ffd966]Measured[/color][/b][/size]
+[list]
+[*][b]A door[/b] (home ↔ yard): 1.4–1.9 s without mods, up to 2.6 s with many mods → [color=#9be07a][b]~0.3 s[/b][/color]
+[*][b]Map travel:[/b] ~1.8 s → [color=#9be07a][b]~0.3 s[/b][/color]
+[*][b]First visit to a place:[/b] an extra 0.3–1.3 s while it loads → [color=#9be07a][b]same as any other visit[/b][/color]
+[*][b]Loading a save:[/b] about 5 s longer, with a progress line (see below)
+[/list]
+
+[size=4][b][color=#ffd966]How[/color][/b][/size]
+
+[b]No freeze at every door[/b]
+With the screen black, the game runs a full memory clean-up on every door: it unloads unused assets, collects garbage and searches everything loaded, 24 times over, for editor-only components. That's most of the wait. The game's garbage collector already works in small steps while you play, so this mod skips the full clean-up on doors and runs it only [b]every 10 minutes[/b] (or sooner if memory grows by 300 MB), and always while a save loads. Every door is measured in the log, so nothing piles up unnoticed.
+
+[b]Shorter fades[/b]
+On doors you use and on map travel, the fades take 0.15 s instead of 0.3 s, and the extra 0.3 s pause in black is gone. Fights and story scenes keep the game's own timing.
+
+[b]Fast first visits[/b]
+While a save loads, the game preloads a fixed list of the pieces places are drawn with. Anything not on that list (for example, what you built in your yard) loads from disk the first time you see it, in one frozen frame. Instant Transitions preloads the rest of the map at the end of the loading screen, several at a time, so first visits are as quick as the next ones. A line under the loading bar shows the progress. It uses about 500 MB more memory and is skipped on PCs with less than 7 GB of RAM.
+
+[center][img]https://raw.githubusercontent.com/VERTO13/GK2-InstantTransitions/main/docs/images/loading.gif[/img][/center]
+
+[b]Compare it yourself[/b]
+Press [b]Ctrl + Shift + O[/b] while playing to turn the mod on or off. The change applies from the next door, and a notice shows the new state.
+
+[size=4][b][color=#ffd966]Beta[/color][/b][/size]
+Doors and loading are measured and tested. Long play sessions are still being tested. If anything feels off, please post [b]BepInEx\LogOutput.log[/b] in the Bugs tab: every door, loading screen and clean-up is written there ([b][Door][/b], [b][Load][/b], [b][Preload][/b] and [b][Clean-up][/b] lines), which makes problems easy to find.
+
+[size=4][b][color=#ffd966]Settings[/color][/b][/size]
+In [b]BepInEx\config\verto13.gk2.instanttransitions.cfg[/b] (created the first time you play), every setting explained inside:
+[list]
+[*][b]Enabled[/b] (true): false = everything as in the unmodded game; the mod only measures doors.
+[*][b]ToggleKey[/b] (Ctrl + Shift + O): turns the mod on and off while playing.
+[*][b]FullCleanupEveryMinutes[/b] (10) and [b]FullCleanupWhenMemoryGrowsMB[/b] (300): when a door still gets the game's full clean-up.
+[*][b]FadeSeconds[/b] (0.15) and [b]BlackPauseSeconds[/b] (0): the game uses 0.3 and 0.3.
+[*][b]PreloadPlaces[/b] (true) and [b]PreloadMaxSeconds[/b] (20): the map preload while a save loads.
+[/list]
+
+[size=4][b][color=#ffd966]Install[/color][/b][/size]
+[list=1]
+[*]Needs [url=https://github.com/BepInEx/BepInEx/releases]BepInEx 5.4.23.x (x64)[/url]. The [b]with-BepInEx[/b] file already includes it.
+[*]Extract the zip into your game folder (Steam → right-click Graveyard Keeper 2 → Manage → Browse local files). It holds [b]BepInEx/plugins/InstantTransitions/[/b].
+[*]To uninstall, delete that folder. Your saves are never touched.
+[/list]
+
+[size=4][b][color=#ffd966]Compatibility[/color][/b][/size]
+[list]
+[*]Doesn't touch your saves or change any balance.
+[*]Use only [b]one[/b] mod that changes doors or the game's memory clean-up; two of them would fight over the same thing.
+[*]Tested with Graveyard Keeper 2 1.006 and BepInEx 5.4.23.5, alongside a dozen other mods.
+[/list]
+
+Source code (MIT) on [url=https://github.com/VERTO13/GK2-InstantTransitions]GitHub[/url]. Made with AI assistance. From the author of [url=https://www.nexusmods.com/graveyardkeeper2/mods/177]Crafting Queue[/url].

@@ -13,3 +13,6 @@ obj/
 
 # Local notes / logs
 *.log
+
+# Release packages
+dist/
