@@ -2,7 +2,7 @@
 
 [English](README.md) | **Español**
 
-Cada puerta de Graveyard Keeper 2 congela el juego con la pantalla en negro entre 1 y 2 segundos, y más mientras más mods tengas. **Instant Transitions** deja las puertas y los viajes por el mapa en unos **0.3 segundos**, incluso la primera vez que entras a un lugar.
+Cada puerta de Graveyard Keeper 2 congela el juego con la pantalla en negro entre 1 y 2 segundos, y más mientras más mods tengas. **Instant Transitions** deja las puertas y los viajes por el mapa en unos **0.3 segundos**, y la primera visita a un lugar casi igual de rápida.
 
 > ⚠️ **Beta (0.9.0).** Las puertas y la carga están medidas y probadas. Las sesiones largas todavía se están probando: si algo se siente raro, [repórtalo](#reportar-errores) con tu registro. Ayuda muchísimo.
 
@@ -16,14 +16,14 @@ Cada puerta de Graveyard Keeper 2 congela el juego con la pantalla en negro entr
 |---|---|---|
 | Una puerta (casa ↔ patio) | 1.4–1.9 s (hasta 2.6 s con muchos mods) | **~0.3 s** |
 | Viajar por el mapa | ~1.8 s | **~0.3 s** |
-| Primera visita a un lugar | +0.3–1.3 s mientras carga | **igual que cualquier otra visita** |
+| Primera visita a un lugar | +0.3–1.3 s mientras carga | **casi igual que cualquier otra visita** |
 | Cargar una partida | lo normal | unos 5 s más, con una línea de avance |
 
 **El congelón en cada puerta.** Con la pantalla en negro, el juego hace una limpieza completa de memoria en cada puerta: libera recursos sin usar, recoge basura y busca 24 veces, por todo lo cargado, componentes que solo sirven en el editor. Eso es casi toda la espera. La recolección de basura del juego ya trabaja en pedacitos mientras juegas, así que este mod se salta la limpieza completa en las puertas y la hace solo cada 10 minutos (o antes si la memoria crece 300 MB), y siempre al cargar partida. Cada puerta queda medida en el registro, para comprobar que nada se acumula.
 
 **Fundidos más cortos.** En las puertas que usas y en los viajes por el mapa, los fundidos duran 0.15 s en vez de 0.3 s, y desaparece la pausa extra de 0.3 s en negro. Las peleas y las escenas de historia conservan los tiempos del juego.
 
-**Primeras visitas rápidas.** Mientras carga una partida, el juego precarga una lista fija de las piezas con las que se dibujan los lugares. Lo que no está en esa lista (por ejemplo, lo que construiste en tu patio) se carga del disco la primera vez que lo ves, en un cuadro congelado. Instant Transitions precarga el resto del mapa al final de la pantalla de carga, varias piezas a la vez, para que la primera visita sea tan rápida como las siguientes. Una línea bajo la barra de carga muestra el avance. Usa unos 500 MB más de memoria y se omite en PCs con menos de 7 GB de RAM.
+**Primeras visitas rápidas.** Mientras carga una partida, el juego precarga una lista fija de las piezas con las que se dibujan los lugares. Lo que no está en esa lista (por ejemplo, lo que construiste en tu patio) se carga del disco la primera vez que lo ves, en un cuadro congelado. Instant Transitions precarga el resto del mapa al final de la pantalla de carga, varias piezas a la vez, para que la primera visita sea casi tan rápida como las siguientes. Una línea bajo la barra de carga muestra el avance. Usa unos 500 MB más de memoria y se omite en PCs con menos de 7 GB de RAM.
 
 ![La pantalla de carga: el juego carga y luego Instant Transitions prepara todos los lugares del mapa](docs/images/loading.gif)
 

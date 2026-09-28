@@ -2,7 +2,7 @@
 
 **English** | [Español](README.es.md)
 
-Every door in Graveyard Keeper 2 freezes the game with the screen black for 1 to 2 seconds, and longer the more mods you have. **Instant Transitions** takes doors and map travel down to about **0.3 seconds**, including the first time you enter a place.
+Every door in Graveyard Keeper 2 freezes the game with the screen black for 1 to 2 seconds, and longer the more mods you have. **Instant Transitions** takes doors and map travel down to about **0.3 seconds**, and makes the first visit to a place nearly as quick.
 
 > ⚠️ **Beta (0.9.0).** Doors and loading are measured and tested. Long play sessions are still being tested, so if anything feels off, please [report it](#reporting-bugs) with your log. It really helps.
 
@@ -16,14 +16,14 @@ Every door in Graveyard Keeper 2 freezes the game with the screen black for 1 to
 |---|---|---|
 | A door (home ↔ yard) | 1.4–1.9 s (up to 2.6 s with many mods) | **~0.3 s** |
 | Map travel | ~1.8 s | **~0.3 s** |
-| First visit to a place | +0.3–1.3 s while it loads | **same as any other visit** |
+| First visit to a place | +0.3–1.3 s while it loads | **almost the same as any other visit** |
 | Loading a save | as usual | about 5 s longer, with a progress line |
 
 **The freeze at every door.** With the screen black, the game runs a full memory clean-up on every door: it unloads unused assets, collects garbage and searches everything loaded, 24 times over, for editor-only components. That's most of the wait. The game's garbage collector already works in small steps while you play, so this mod skips the full clean-up on doors and runs it only every 10 minutes (or sooner if memory grows by 300 MB), and always while a save loads. Every door is measured in the log, so you can check that nothing piles up.
 
 **Shorter fades.** On doors you use and on map travel, the fades take 0.15 s instead of 0.3 s, and the extra 0.3 s pause in black is gone. Fights and story scenes keep the game's own timing.
 
-**Fast first visits.** While a save loads, the game preloads a fixed list of the pieces places are drawn with. Anything not on that list (for example, what you built in your yard) loads from disk the first time you see it, in one frozen frame. Instant Transitions preloads the rest of the map at the end of the loading screen, several at a time, so first visits are as quick as the next ones. A line under the loading bar shows the progress. This uses about 500 MB more memory and is skipped on PCs with less than 7 GB of RAM.
+**Fast first visits.** While a save loads, the game preloads a fixed list of the pieces places are drawn with. Anything not on that list (for example, what you built in your yard) loads from disk the first time you see it, in one frozen frame. Instant Transitions preloads the rest of the map at the end of the loading screen, several at a time, so first visits are nearly as quick as the next ones. A line under the loading bar shows the progress. This uses about 500 MB more memory and is skipped on PCs with less than 7 GB of RAM.
 
 ![The loading screen: the game loads, then Instant Transitions prepares every place on the map](docs/images/loading.gif)
 
