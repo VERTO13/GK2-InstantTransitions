@@ -6,7 +6,7 @@ using HarmonyLib;
 using UnityEngine;
 using UnityEngine.Scripting;
 
-namespace SmoothDoors;
+namespace InstantTransitions;
 
 // La limpieza que el juego hace con la pantalla en negro (MainGame.HiddenOptimization): en cada puerta y
 // teletransporte (PlayerController.Teleport, después del fundido) y al terminar de cargar una partida

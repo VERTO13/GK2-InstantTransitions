@@ -7,7 +7,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace SmoothDoors;
+namespace InstantTransitions;
 
 // Aviso corto arriba al centro (al prender o apagar el mod con su tecla): un recuadro oscuro como los del panel de
 // Crafting Queue, con la letra de la interfaz del juego, que se desvanece solo.
@@ -58,7 +58,7 @@ internal static class Notice
 
     private static void Create()
     {
-        root = new GameObject("Smooth Doors notice");
+        root = new GameObject("Instant Transitions notice");
         UnityEngine.Object.DontDestroyOnLoad(root);
         canvas = root.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;

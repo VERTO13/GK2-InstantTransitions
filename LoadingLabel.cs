@@ -7,7 +7,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace SmoothDoors;
+namespace InstantTransitions;
 
 // Un renglón bajo la barra de la pantalla de carga mientras corre la precarga: la barra del juego ya llegó al final y,
 // sin esto, parecía que la carga se había trabado. Con la letra de la misma pantalla y en el idioma del juego
@@ -68,7 +68,7 @@ internal static class LoadingLabel
 
     private static void Create()
     {
-        root = new GameObject("Smooth Doors loading label");
+        root = new GameObject("Instant Transitions loading label");
         UnityEngine.Object.DontDestroyOnLoad(root);
         canvas = root.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;

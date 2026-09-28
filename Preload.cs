@@ -8,7 +8,7 @@ using HarmonyLib;
 using LazyBearTechnology;
 using UnityEngine;
 
-namespace SmoothDoors;
+namespace InstantTransitions;
 
 // Primera visita rápida. Los objetos de un lugar se dibujan con piezas que el juego saca de tres reservas: WgoPartPool
 // (objetos: estaciones, muebles, lo que construyes), ConstructorPartPool (piezas de edificios) y

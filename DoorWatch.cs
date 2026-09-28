@@ -11,7 +11,7 @@ using UnityEngine;
 using UnityEngine.Profiling;
 using UnityEngine.Scripting;
 
-namespace SmoothDoors;
+namespace InstantTransitions;
 
 // Sigue cada puerta de principio a fin sin tocar nada del juego: solo mira, cuadro a cuadro, lo mismo que
 // el juego usa. Empieza cuando el juego le quita el control al jugador por teletransporte
@@ -211,8 +211,8 @@ internal class DoorWatch : MonoBehaviour
             Cleanup.ResetBaseline();
         bool es = (LLBase.CurrentLang ?? "").StartsWith("es", StringComparison.OrdinalIgnoreCase);
         Notice.Show(on
-            ? (es ? "Smooth Doors: prendido — puertas rápidas" : "Smooth Doors: on — quick doors")
-            : (es ? "Smooth Doors: apagado — puertas como el juego sin mods" : "Smooth Doors: off — doors as in the unmodded game"));
+            ? (es ? "Instant Transitions: prendido — puertas rápidas" : "Instant Transitions: on — quick doors")
+            : (es ? "Instant Transitions: apagado — puertas como el juego sin mods" : "Instant Transitions: off — doors as in the unmodded game"));
         Plugin.Log.LogInfo(on ? "Turned on with its key." : "Turned off with its key: doors as in the unmodded game.");
     }
 
@@ -245,7 +245,7 @@ internal class DoorWatch : MonoBehaviour
         {
             long end = Now();
             Plugin.Log.LogInfo($"[Load] loading screen {Seconds(loadStart, end):0.0} s" +
-                               (Preload.LastSeconds > 0 ? $", of which the Smooth Doors preload {Preload.LastSeconds:0.0} s" : "") + " · " + Phases(end));
+                               (Preload.LastSeconds > 0 ? $", of which the Instant Transitions preload {Preload.LastSeconds:0.0} s" : "") + " · " + Phases(end));
             loadStart = 0;
         }
     }

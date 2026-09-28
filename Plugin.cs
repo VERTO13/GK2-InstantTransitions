@@ -4,7 +4,7 @@ using BepInEx.Logging;
 using HarmonyLib;
 using UnityEngine;
 
-namespace SmoothDoors;
+namespace InstantTransitions;
 
 // Puertas sin congelones. En cada puerta y teletransporte, con la pantalla en negro, el juego hace una limpieza
 // completa (liberar recursos sin usar, recolección de basura y 24 búsquedas de "componentes de editor" por todo
@@ -16,9 +16,9 @@ namespace SmoothDoors;
 [BepInPlugin(Guid, Name, Version)]
 public sealed class Plugin : BaseUnityPlugin
 {
-    public const string Guid = "verto13.gk2.smoothdoors";
-    public const string Name = "Smooth Doors";
-    public const string Version = "0.1.0";
+    public const string Guid = "verto13.gk2.instanttransitions";
+    public const string Name = "Instant Transitions";
+    public const string Version = "0.9.0";
 
     internal static ManualLogSource Log;
     internal static ConfigEntry<bool> Enabled;
@@ -38,7 +38,7 @@ public sealed class Plugin : BaseUnityPlugin
             "and preload places. false = everything as in the unmodded game; the mod only measures doors in the log. " +
             "Can be switched while playing with ToggleKey.");
         ToggleKey = Config.Bind("Doors", "ToggleKey", new KeyboardShortcut(KeyCode.O, KeyCode.LeftControl, KeyCode.LeftShift),
-            "Turns Smooth Doors on and off while playing, to compare doors with and without it. A notice shows the new state.");
+            "Turns Instant Transitions on and off while playing, to compare doors with and without it. A notice shows the new state.");
         FullEveryMinutes = Config.Bind("Doors", "FullCleanupEveryMinutes", 10f,
             "A door still gets the game's full clean-up once this many minutes have passed since the last one.");
         FullWhenGrownMB = Config.Bind("Doors", "FullCleanupWhenMemoryGrowsMB", 300,

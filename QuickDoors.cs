@@ -5,7 +5,7 @@ using HarmonyLib;
 using LazyBearTechnology;
 using UnityEngine;
 
-namespace SmoothDoors;
+namespace InstantTransitions;
 
 // Puertas más cortas: sin la limpieza, lo que queda de una puerta es animación fija del juego. Medido:
 // fundido a negro 0.3 s, una pausa en negro de 0.3 s (TeleportDataBase.delayInFade, el valor de fábrica de
