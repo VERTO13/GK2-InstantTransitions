@@ -58,3 +58,8 @@ Future versions: upload each zip with "Update existing file" on its counterpart,
 ## Changelog 0.9.0
 
 - First public beta: doors and map travel in about 0.3 s, a map preload while a save loads, and Ctrl + Shift + O to turn it on and off.
+
+## Changelog 0.9.1
+
+- Loads on older versions of the game (a player on 1.004.2 got an error and the whole mod stopped): anything the game doesn't have yet now turns itself off, with a line in the log, instead of stopping the mod.
+- The log's first line now says the game version.

@@ -4,7 +4,7 @@
 
 Cada puerta de Graveyard Keeper 2 congela el juego con la pantalla en negro entre 1 y 2 segundos, y más mientras más mods tengas. **Instant Transitions** deja las puertas y los viajes por el mapa en unos **0.3 segundos**, y la primera visita a un lugar casi igual de rápida.
 
-> ⚠️ **Beta (0.9.0).** Las puertas y la carga están medidas y probadas. Las sesiones largas todavía se están probando: si algo se siente raro, [repórtalo](#reportar-errores) con tu registro. Ayuda muchísimo.
+> ⚠️ **Beta (0.9.1).** Las puertas y la carga están medidas y probadas. Las sesiones largas todavía se están probando: si algo se siente raro, [repórtalo](#reportar-errores) con tu registro. Ayuda muchísimo.
 
 ![Una puerta y un viaje por el mapa lado a lado: 1.5 s sin mods, 0.35 s con Instant Transitions](docs/images/doors-vs-vanilla.gif)
 

@@ -4,7 +4,7 @@
 
 Every door in Graveyard Keeper 2 freezes the game with the screen black for 1 to 2 seconds, and longer the more mods you have. **Instant Transitions** takes doors and map travel down to about **0.3 seconds**, and makes the first visit to a place nearly as quick.
 
-> ⚠️ **Beta (0.9.0).** Doors and loading are measured and tested. Long play sessions are still being tested, so if anything feels off, please [report it](#reporting-bugs) with your log. It really helps.
+> ⚠️ **Beta (0.9.1).** Doors and loading are measured and tested. Long play sessions are still being tested, so if anything feels off, please [report it](#reporting-bugs) with your log. It really helps.
 
 ![A door and a map trip side by side: 1.5 s without mods, 0.35 s with Instant Transitions](docs/images/doors-vs-vanilla.gif)
 

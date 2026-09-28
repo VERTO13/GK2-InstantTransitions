@@ -39,7 +39,12 @@ internal static class Cleanup
         public double TotalMs => unloadMs + gcMs + stripMs;
     }
 
-    private static readonly FieldInfo StripTypes = AccessTools.Field(typeof(EditorOnlyComponentStripper), "TypesToStrip");
+    // Por nombre y no con typeof: en versiones viejas del juego (1.004.2) estas clases no existen, y con typeof el mod
+    // entero no cargaba. Ahí el juego tampoco quita componentes de editor, así que ese paso simplemente no hace nada.
+    private static readonly Type Stripper = AccessTools.TypeByName("EditorOnlyComponentStripper");
+    private static readonly FieldInfo StripTypes = Stripper != null ? AccessTools.Field(Stripper, "TypesToStrip") : null;
+    private static readonly MethodInfo StripAll = Stripper != null ? AccessTools.Method(Stripper, "StripAll") : null;
+    private static readonly Type BoxMarker = AccessTools.TypeByName("WgoPartGraphUpdateSceneBoxMarker");
 
     private static float lastFullAt;          // Time.realtimeSinceStartup de la última limpieza completa
     private static long memoryAtLastFull;     // MB (Unity + basura administrada) justo después de ella
@@ -219,8 +224,8 @@ internal static class Cleanup
         }
         catch (Exception e)
         {
-            // Preload.Start atrapa lo suyo; esto solo pasa si la precarga ni siquiera se pudo cargar (juego actualizado).
-            Plugin.Log.LogWarning("[Preload] " + e.Message);
+            // Preload.Start atrapa lo suyo; esto solo pasa si la precarga ni siquiera se pudo cargar (otra versión del juego).
+            Plugin.Log.LogWarning("[Preload] off: " + (e.InnerException ?? e).Message);
             HideLabel();
             complete();
         }
@@ -277,9 +282,11 @@ internal static class Cleanup
     // campo, se llama a la del juego tal cual.
     private static int Strip()
     {
+        if (Stripper == null)
+            return 0; // esta versión del juego no tiene componentes de editor que quitar
         if (!(StripTypes?.GetValue(null) is Type[] types))
         {
-            EditorOnlyComponentStripper.StripAll();
+            StripAll?.Invoke(null, null);
             return -1;
         }
         int found = 0;
@@ -292,7 +299,7 @@ internal static class Cleanup
                 if (!(o is Component c) || c == null)
                     continue;
                 found++;
-                if (c is WgoPartGraphUpdateSceneBoxMarker && c.gameObject.activeSelf)
+                if (BoxMarker != null && BoxMarker.IsInstanceOfType(c) && c.gameObject.activeSelf)
                     c.gameObject.SetActive(false);
                 UnityEngine.Object.Destroy(c);
             }

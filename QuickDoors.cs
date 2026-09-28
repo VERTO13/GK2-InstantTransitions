@@ -32,6 +32,14 @@ internal static class QuickDoors
     internal static string LastWhy = ""; // qué teletransporte era, o por qué se dejó como el juego (para el log)
     internal static float LastTeleportAt = -100f; // cualquier teletransporte (la limpieza de después es de puerta, no de carga)
 
+    // Quién llamó a Teleport, por nombre: si una versión del juego no tiene alguna de estas clases, ese caso
+    // simplemente no se reconoce (se queda como el juego) en vez de fallar en cada teletransporte.
+    private static readonly Type MapPage = AccessTools.TypeByName("MapPageWidget");
+    private static readonly Type Expression = AccessTools.TypeByName("LazyExpression");
+    private static readonly Type Fights = AccessTools.TypeByName("FightingGameController");
+    private static readonly Type ScriptTeleport = AccessTools.TypeByName("GK2.FlowCanvasNodes.Flow_TeleportPlayer");
+    private static readonly Type PlayerInput = AccessTools.TypeByName("PlayerInputHandler");
+
     public static void Apply(Harmony harmony)
     {
         TryPatch(harmony, AccessTools.Method(typeof(PlayerController), nameof(PlayerController.Teleport), new[] { typeof(TeleportDataBase) }),
@@ -86,9 +94,32 @@ internal static class QuickDoors
         }
     }
 
-    private static void ShortFadeIn(UIBasicFade __instance, ref float fadeTime) => Shorten(__instance, ref fadeTime, last: false);
+    // Un fundido del juego nunca debe fallar por culpa del mod: si algo sale mal, el fundido queda como el del juego.
+    private static void ShortFadeIn(UIBasicFade __instance, ref float fadeTime)
+    {
+        try
+        {
+            Shorten(__instance, ref fadeTime, last: false);
+        }
+        catch (Exception e)
+        {
+            active = false;
+            Plugin.Log.LogDebug("Quick fades: " + e.Message);
+        }
+    }
 
-    private static void ShortFadeOut(UIBasicFade __instance, ref float fadeTime) => Shorten(__instance, ref fadeTime, last: true);
+    private static void ShortFadeOut(UIBasicFade __instance, ref float fadeTime)
+    {
+        try
+        {
+            Shorten(__instance, ref fadeTime, last: true);
+        }
+        catch (Exception e)
+        {
+            active = false;
+            Plugin.Log.LogDebug("Quick fades: " + e.Message);
+        }
+    }
 
     // Solo la cortina negra de las puertas (UIFade); dormir y los textos en negro son otras.
     private static void Shorten(UIBasicFade fade, ref float fadeTime, bool last)
@@ -122,23 +153,23 @@ internal static class QuickDoors
             {
                 if (script)
                 {
-                    if (t == typeof(PlayerInputHandler))
+                    if (t == PlayerInput)
                         return NothingElseGoingOn("scripted door", out why);
                     continue;
                 }
-                if (t == typeof(MapPageWidget))
+                if (t == MapPage)
                 {
                     why = "map";
                     return true;
                 }
-                if (t == typeof(LazyExpression))
+                if (t == Expression)
                     return NothingElseGoingOn("door", out why);
-                if (t == typeof(FightingGameController))
+                if (t == Fights)
                 {
                     why = "fight";
                     return false;
                 }
-                if (t == typeof(GK2.FlowCanvasNodes.Flow_TeleportPlayer))
+                if (t == ScriptTeleport)
                 {
                     script = true;
                     why = "a script the player didn't start";

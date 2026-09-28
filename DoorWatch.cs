@@ -90,7 +90,7 @@ internal class DoorWatch : MonoBehaviour
                                  $"door fades {Plugin.FadeSeconds.Value:0.##} s, pause in black {Plugin.BlackPauseSeconds.Value:0.##} s. "
                                : "off: doors as in the unmodded game, only measured. ") +
                            $"{Plugin.ToggleKey.Value} turns it on and off while playing. " +
-                           $"Unity {Application.unityVersion}, incremental GC {GarbageCollector.isIncremental}, " +
+                           $"Graveyard Keeper 2 {Application.version}, Unity {Application.unityVersion}, incremental GC {GarbageCollector.isIncremental}, " +
                            $"system RAM {SystemInfo.systemMemorySize} MB, {Chainloader.PluginInfos.Count} BepInEx plugins: " +
                            string.Join(", ", Chainloader.PluginInfos.Values.Select(p => p.Metadata.Name)));
     }
@@ -147,7 +147,14 @@ internal class DoorWatch : MonoBehaviour
         {
             Plugin.Log.LogDebug("Preload watch: " + e.Message);
         }
-        Notice.Tick();
+        try
+        {
+            Notice.Tick();
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.LogDebug("Notice: " + e.Message);
+        }
         try
         {
             ToggleIfAsked();

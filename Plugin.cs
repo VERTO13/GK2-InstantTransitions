@@ -18,7 +18,7 @@ public sealed class Plugin : BaseUnityPlugin
 {
     public const string Guid = "verto13.gk2.instanttransitions";
     public const string Name = "Instant Transitions";
-    public const string Version = "0.9.0";
+    public const string Version = "0.9.1";
 
     internal static ManualLogSource Log;
     internal static ConfigEntry<bool> Enabled;
@@ -56,8 +56,23 @@ public sealed class Plugin : BaseUnityPlugin
         // Los parches se ponen siempre, para poder prenderlo jugando; apagado, cada uno deja pasar al juego tal cual
         // (la limpieza original, los fundidos y la pausa de fábrica, sin precarga), y otro mod de puertas funciona igual.
         Harmony harmony = new Harmony(Guid);
-        Cleanup.Apply(harmony);
-        QuickDoors.Apply(harmony);
-        gameObject.AddComponent<DoorWatch>();
+        // Cada parte arranca por su lado: si a una le falta algo del juego (otra versión, como la 1.004.2), esa se
+        // queda apagada y el log dice por qué, y las demás siguen. Antes una sola clase faltante tumbaba el mod entero.
+        StartPart("the memory clean-up on doors", () => Cleanup.Apply(harmony));
+        StartPart("the quick fades", () => QuickDoors.Apply(harmony));
+        StartPart("the door log, loading line and preload", () => gameObject.AddComponent<DoorWatch>());
+    }
+
+    private static void StartPart(string what, System.Action start)
+    {
+        try
+        {
+            start();
+        }
+        catch (System.Exception e)
+        {
+            System.Exception cause = e is System.TypeInitializationException && e.InnerException != null ? e.InnerException : e;
+            Log.LogWarning($"Off: {what}. This version of the game ({Application.version}) is missing something it needs: {cause.Message}");
+        }
     }
 }
