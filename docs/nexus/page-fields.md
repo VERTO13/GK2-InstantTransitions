@@ -1,6 +1,10 @@
 # Nexus page fields
 
-Everything the Nexus mod page needs besides `description.bbcode`, `summary.txt` and `thumbnail/thumbnail.png`.
+What the Nexus page (https://www.nexusmods.com/graveyardkeeper2/mods/206, author LeBetoven) holds besides
+`description.bbcode`, `summary.txt` and `thumbnail/thumbnail.png`.
+
+The description's two GIFs are hosted in the mod's own gallery on Nexus (not on GitHub), so the page works while the
+code isn't public. The editor is SCEditor: paste the BBCode in its "View source" mode.
 
 ## Mod
 
@@ -10,9 +14,15 @@ Everything the Nexus mod page needs besides `description.bbcode`, `summary.txt` 
 - **Version:** 0.9.0
 - **Language:** English
 
+## Gallery (in this order)
+
+1. `thumbnail/thumbnail.png` (the mod's thumbnail): "Instant Transitions: doors and map travel without the freeze"
+2. `docs/images/doors-vs-vanilla.gif`: "Side by side: a door and a map trip, without mods and with Instant Transitions"
+3. `docs/images/loading.gif`: "The loading screen: the game loads, then Instant Transitions prepares every place on the map"
+
 ## Requirements
 
-Off-site requirement:
+Mod requirements (legacy), external resource:
 
 - **Name:** BepInEx 5.4.23.x
 - **Link:** https://github.com/BepInEx/BepInEx/releases
@@ -20,24 +30,26 @@ Off-site requirement:
 
 ## Permissions and credits
 
-**Author's instructions:**
+Closed for now (decided 2026-09-28): the code isn't on GitHub yet. Nexus's "Use recommended settings": re-upload
+and conversion not allowed; modification and asset use, ask the author; donation points and monetisation for others,
+not allowed. When the code goes public, switch to the MIT text Crafting Queue uses and link the repo.
 
-> Instant Transitions is open source under the MIT license: https://github.com/VERTO13/GK2-InstantTransitions/blob/main/LICENSE
-> You may use, modify and share the code, including in your own mods, as long as you keep the copyright and license notice. A credit and a link back are appreciated.
-> The bundled BepInEx keeps its own license (LGPL-2.1).
+- **Third-party content:** Yes (I have permission). Only BepInEx, inside the "with BepInEx" file; its LGPL-2.1
+  license allows bundling it unmodified.
+- **Credits:**
 
-**File credits:**
+> BepInEx by the BepInEx team (LGPL-2.1): https://github.com/BepInEx/BepInEx - bundled unmodified in the "with BepInEx" file, as its license allows, and it keeps its own license. Everything else in Instant Transitions is original work.
 
-> BepInEx by the BepInEx team (LGPL-2.1): https://github.com/BepInEx/BepInEx - bundled unmodified in the "with BepInEx" file, as its license allows. Everything else in Instant Transitions is original work.
-
-**Donations:** straight donations accepted; opt this mod into Donation Points ("Opt In Your Mods") once it shows up in that list.
+- **Donations:** once published, opt this mod into Donation Points ("Opt In Your Mods") when it shows up in that list.
 
 ## Files (Main files)
 
-| File | Name on Nexus | Description |
-|---|---|---|
-| `InstantTransitions-0.9.0-with-BepInEx.zip` | Instant Transitions (with BepInEx) | Pick this one if you're not sure: it includes BepInEx 5.4.23.5. Extract into your game folder. |
-| `InstantTransitions-0.9.0.zip` | Instant Transitions | Only the mod, for players who already have BepInEx 5. Extract into your game folder. |
+| File | Name on Nexus | Primary | Description |
+|---|---|---|---|
+| `InstantTransitions-0.9.0-with-BepInEx.zip` | Instant Transitions (with BepInEx) | yes | Pick this one if you're not sure: it includes BepInEx 5.4.23.5. Extract the zip into your game folder and choose Replace if Windows asks. |
+| `InstantTransitions-0.9.0.zip` | Instant Transitions | no | Only the mod, for players who already have BepInEx 5. Extract the zip into your game folder and choose Replace if Windows asks. |
+
+Future versions: upload each zip with "Update existing file" on its counterpart, so Nexus keeps the history.
 
 ## Changelog 0.9.0
 
