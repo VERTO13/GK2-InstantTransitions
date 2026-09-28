@@ -33,7 +33,8 @@ internal class DoorWatch : MonoBehaviour
     private UIFade fade;
     private UILoadingOverlay overlay;   // la pantalla de carga: se cronometra cada vez que se muestra
     private float nextOverlayLookup;
-    private long loadStart;
+    private long loadStart, saveAt, sceneAt;
+    internal static long LoadCleanupAt, LoadPreloadDoneAt; // los ponen la limpieza de carga y la precarga
     private CanvasGroup curtain;
     private float nextLookup;
     private string lastError;
@@ -201,14 +202,45 @@ internal class DoorWatch : MonoBehaviour
         if (shown && loadStart == 0)
         {
             loadStart = Now();
+            saveAt = sceneAt = LoadCleanupAt = LoadPreloadDoneAt = 0;
             Preload.LastSeconds = 0;
         }
-        else if (!shown && loadStart != 0)
+        if (shown)
         {
-            Plugin.Log.LogInfo($"[Load] loading screen {Seconds(loadStart, Now()):0.0} s" +
-                               (Preload.LastSeconds > 0 ? $", of which the Smooth Doors preload {Preload.LastSeconds:0.0} s" : ""));
+            // Fases: la partida ya está en memoria (PlayerData), el mapa ya arrancó (GameScene.Start pone CurrentGameScene).
+            bool game = MainGame.Instance != null;
+            if (saveAt == 0 && game && MainGame.PlayerData != null)
+                saveAt = Now();
+            if (sceneAt == 0 && game && MainGame.PlayerController != null && MainGame.PlayerController.CurrentGameScene != null)
+                sceneAt = Now();
+        }
+        else if (loadStart != 0)
+        {
+            long end = Now();
+            Plugin.Log.LogInfo($"[Load] loading screen {Seconds(loadStart, end):0.0} s" +
+                               (Preload.LastSeconds > 0 ? $", of which the Smooth Doors preload {Preload.LastSeconds:0.0} s" : "") + " · " + Phases(end));
             loadStart = 0;
         }
+    }
+
+    // Desglose de la pantalla de carga: cada fase desde la anterior que sí se vio.
+    private string Phases(long end)
+    {
+        var parts = new List<string>();
+        long from = loadStart;
+        void Phase(string name, long at)
+        {
+            if (at == 0 || at < from)
+                return;
+            parts.Add($"{name} {Seconds(from, at):0.0}");
+            from = at;
+        }
+        Phase("save data", saveAt);
+        Phase("map", sceneAt);
+        Phase("game's after-load work", LoadCleanupAt);
+        Phase("clean-up + preload", LoadPreloadDoneAt);
+        Phase("last frames", end);
+        return parts.Count > 0 ? string.Join(", ", parts) + " s" : "no phases seen";
     }
 
     // La limpieza terminó (o se saltó): si fue durante una puerta, cuenta para esa puerta; si no (cargar una

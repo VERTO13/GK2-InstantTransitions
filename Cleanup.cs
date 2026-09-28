@@ -126,7 +126,12 @@ internal static class Cleanup
         var done = new UniTaskCompletionSource();
         Action complete = () => done.TrySetResult();
         // Al cargar una partida, después de la limpieza va la precarga de las piezas del mapa (la carga la espera).
-        Action after = run.why == Loading && Plugin.PreloadPlaces.Value ? () => StartPreload(complete) : complete;
+        bool preload = run.why == Loading && Plugin.PreloadPlaces.Value;
+        Action after = preload ? () => StartPreload(complete) : complete;
+        if (run.why == Loading)
+            DoorWatch.LoadCleanupAt = Stopwatch.GetTimestamp(); // para el desglose de la pantalla de carga
+        if (preload)
+            LoadingLabel.Show(0, 1); // desde ya: la barra del juego ya está llena y la limpieza tarda casi 1 s
         long t0 = Stopwatch.GetTimestamp();
         if (!run.full)
         {

@@ -97,21 +97,39 @@ internal static class LoadingLabel
         rt.sizeDelta = new Vector2(1200f, 40f);
     }
 
-    // Debajo de la barra del juego (en unidades de este lienzo, a la escala de la interfaz del juego); sin barra, abajo al centro.
+    // Debajo de la barra del juego y de sus textos (el "Cargando" va justo bajo la barra), en unidades de este lienzo a
+    // la escala de la interfaz del juego; sin barra, abajo al centro.
     private static void Place()
     {
         float scale = LazyUI.ScaleFactor > 0.001f ? Mathf.Round(LazyUI.ScaleFactor) : 1f;
         if (canvas.scaleFactor != scale)
             canvas.scaleFactor = scale;
         Vector2 at = new Vector2(Screen.width * 0.5f, Screen.height * 0.12f);
-        if (Slider?.GetValue(Overlay()) is UnityEngine.UI.Slider bar && bar != null && bar.gameObject.activeInHierarchy)
+        UILoadingOverlay overlay = Overlay();
+        if (Slider?.GetValue(overlay) is UnityEngine.UI.Slider bar && bar != null && bar.gameObject.activeInHierarchy)
         {
             Canvas owner = bar.GetComponentInParent<Canvas>();
             Camera cam = owner != null && owner.renderMode != RenderMode.ScreenSpaceOverlay ? owner.worldCamera : null;
             ((RectTransform)bar.transform).GetWorldCorners(corners);
             Vector2 left = RectTransformUtility.WorldToScreenPoint(cam, corners[0]);
             Vector2 right = RectTransformUtility.WorldToScreenPoint(cam, corners[3]);
-            at = new Vector2((left.x + right.x) * 0.5f, Mathf.Min(left.y, right.y) - 6f * scale);
+            float bottom = Mathf.Min(left.y, right.y);
+            // Los textos de la pantalla de carga que están bajo la barra (a lo ancho de ella y a menos de 200 px): el
+            // nuestro va debajo del más bajo.
+            foreach (TMP_Text t in overlay.GetComponentsInChildren<TMP_Text>(false))
+            {
+                if (!t.enabled || string.IsNullOrEmpty(t.text) || t.color.a < 0.05f)
+                    continue;
+                Bounds b = t.textBounds;
+                Vector2 lo = RectTransformUtility.WorldToScreenPoint(cam, t.rectTransform.TransformPoint(b.min));
+                Vector2 hi = RectTransformUtility.WorldToScreenPoint(cam, t.rectTransform.TransformPoint(b.max));
+                float top = Mathf.Max(lo.y, hi.y), low = Mathf.Min(lo.y, hi.y);
+                bool underBar = top <= bottom + 4f * scale && low > bottom - 200f * scale;
+                bool acrossBar = Mathf.Max(lo.x, hi.x) >= left.x && Mathf.Min(lo.x, hi.x) <= right.x;
+                if (underBar && acrossBar)
+                    bottom = Mathf.Min(bottom, low);
+            }
+            at = new Vector2((left.x + right.x) * 0.5f, bottom - 8f * scale);
         }
         ((RectTransform)text.transform).anchoredPosition = new Vector2(Mathf.Round(at.x / scale), Mathf.Round(at.y / scale));
     }

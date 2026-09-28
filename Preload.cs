@@ -120,7 +120,8 @@ internal static class Preload
             var counts = new Dictionary<Kind, Counts> { [Kind.Object] = new Counts(), [Kind.ConstructorPart] = new Counts(), [Kind.Baked] = new Counts() };
             List<Job> jobs = Collect(counts, out string scene);
             var inFlight = new List<Job>();
-            int next = 0, done = 0;
+            int next = 0, done = 0, frames = 0;
+            long workMs = 0;
             bool stopped = false;
             while (next < jobs.Count || inFlight.Count > 0)
             {
@@ -154,6 +155,8 @@ internal static class Preload
                     done++;
                 }
                 LoadingLabel.Show(done, jobs.Count);
+                workMs += frame.ElapsedMilliseconds;
+                frames++;
                 yield return null; // que la pantalla de carga siga animada
             }
             double loadSeconds = total.Elapsed.TotalSeconds;
@@ -166,7 +169,9 @@ internal static class Preload
             }
             Cleanup.ResetBaseline(); // la memoria de ahora es la referencia de la siguiente limpieza completa
             LastSeconds = total.Elapsed.TotalSeconds;
-            Plugin.Log.LogInfo($"[Preload] map {scene ?? "?"}: {loadSeconds:0.00} s" + (stopped ? $" (stopped at the {Plugin.PreloadMaxSeconds.Value:0} s limit)" : "") +
+            DoorWatch.LoadPreloadDoneAt = Stopwatch.GetTimestamp();
+            Plugin.Log.LogInfo($"[Preload] map {scene ?? "?"}: {loadSeconds:0.00} s ({frames} frames, main-thread work {workMs / 1000.0:0.00} s)" +
+                               (stopped ? $" (stopped at the {Plugin.PreloadMaxSeconds.Value:0} s limit)" : "") +
                                $" · objects {counts[Kind.Object]} · building parts {counts[Kind.ConstructorPart]} · scenery {counts[Kind.Baked]}{strip}" +
                                $" · memory {memoryBefore} -> {Cleanup.MemoryMB()} MB · game process {processBefore} -> {DoorWatch.ProcessMB()} MB");
         }
