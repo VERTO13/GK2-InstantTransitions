@@ -90,6 +90,11 @@ internal static class QuickDoors
     {
         if (!Active || !(fade is UIFade))
             return;
+        if (!Plugin.Enabled.Value)
+        {
+            active = false; // se apagó a media puerta: el resto de esta puerta ya es del juego
+            return;
+        }
         float quick = Mathf.Max(0f, Plugin.FadeSeconds.Value);
         if (fadeTime > quick)
             fadeTime = quick;
