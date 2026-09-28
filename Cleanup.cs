@@ -77,8 +77,6 @@ internal static class Cleanup
 
     private static string DueReason()
     {
-        if (!Plugin.Enabled.Value)
-            return "mod off";
         // Fuera de una puerta = al cargar una partida (la pantalla de carga ya lo tapa). Un teletransporte que el
         // vigilante todavía no vio (la cortina ya estaba negra) sigue siendo puerta: lo dice el parche de Teleport.
         if (!DoorWatch.InDoor && Time.realtimeSinceStartup - QuickDoors.LastTeleportAt > 10f)
@@ -96,6 +94,9 @@ internal static class Cleanup
 
     private static bool Instead(ref UniTask __result)
     {
+        // Apagado (se puede cambiar jugando): la limpieza original del juego, tal cual.
+        if (!Plugin.Enabled.Value)
+            return true;
         string why;
         try
         {

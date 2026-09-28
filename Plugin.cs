@@ -2,6 +2,7 @@ using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
+using UnityEngine;
 
 namespace SmoothDoors;
 
@@ -21,6 +22,7 @@ public sealed class Plugin : BaseUnityPlugin
 
     internal static ManualLogSource Log;
     internal static ConfigEntry<bool> Enabled;
+    internal static ConfigEntry<KeyboardShortcut> ToggleKey;
     internal static ConfigEntry<float> FullEveryMinutes;
     internal static ConfigEntry<int> FullWhenGrownMB;
     internal static ConfigEntry<float> FadeSeconds;
@@ -33,8 +35,10 @@ public sealed class Plugin : BaseUnityPlugin
         Log = Logger;
         Enabled = Config.Bind("Doors", "Enabled", true,
             "Doors skip the game's full memory clean-up (the freeze while the screen is black) unless one is due, fade faster " +
-            "and preload places. false = the mod changes nothing at all and only measures doors in the log " +
-            "(restart the game after changing it).");
+            "and preload places. false = everything as in the unmodded game; the mod only measures doors in the log. " +
+            "Can be switched while playing with ToggleKey.");
+        ToggleKey = Config.Bind("Doors", "ToggleKey", new KeyboardShortcut(KeyCode.O, KeyCode.LeftControl, KeyCode.LeftShift),
+            "Turns Smooth Doors on and off while playing, to compare doors with and without it. A notice shows the new state.");
         FullEveryMinutes = Config.Bind("Doors", "FullCleanupEveryMinutes", 10f,
             "A door still gets the game's full clean-up once this many minutes have passed since the last one.");
         FullWhenGrownMB = Config.Bind("Doors", "FullCleanupWhenMemoryGrowsMB", 300,
@@ -49,14 +53,11 @@ public sealed class Plugin : BaseUnityPlugin
             "visit to each place is as quick as the next ones. The loading screen takes a little longer and the game uses more memory.");
         PreloadMaxSeconds = Config.Bind("Loading", "PreloadMaxSeconds", 20f,
             "The extra preload never makes the loading screen longer than this (seconds); what is left loads as usual.");
-        // Apagado no se parcha nada: el juego queda exactamente como sin el mod (y otro mod de puertas funciona igual,
-        // sin que este se le cruce), y solo queda el vigilante que mide cada puerta.
-        if (Enabled.Value)
-        {
-            Harmony harmony = new Harmony(Guid);
-            Cleanup.Apply(harmony);
-            QuickDoors.Apply(harmony);
-        }
+        // Los parches se ponen siempre, para poder prenderlo jugando; apagado, cada uno deja pasar al juego tal cual
+        // (la limpieza original, los fundidos y la pausa de fábrica, sin precarga), y otro mod de puertas funciona igual.
+        Harmony harmony = new Harmony(Guid);
+        Cleanup.Apply(harmony);
+        QuickDoors.Apply(harmony);
         gameObject.AddComponent<DoorWatch>();
     }
 }

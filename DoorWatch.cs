@@ -69,7 +69,8 @@ internal class DoorWatch : MonoBehaviour
                            (Plugin.Enabled.Value
                                ? $"doors skip the full clean-up unless one is due (every {Plugin.FullEveryMinutes.Value:0.#} min or +{Plugin.FullWhenGrownMB.Value} MB); " +
                                  $"door fades {Plugin.FadeSeconds.Value:0.##} s, pause in black {Plugin.BlackPauseSeconds.Value:0.##} s. "
-                               : "off: measuring doors only, the game is not changed at all. ") +
+                               : "off: doors as in the unmodded game, only measured. ") +
+                           $"{Plugin.ToggleKey.Value} turns it on and off while playing. " +
                            $"Unity {Application.unityVersion}, incremental GC {GarbageCollector.isIncremental}, " +
                            $"system RAM {SystemInfo.systemMemorySize} MB, {Chainloader.PluginInfos.Count} BepInEx plugins: " +
                            string.Join(", ", Chainloader.PluginInfos.Values.Select(p => p.Metadata.Name)));
@@ -120,6 +121,15 @@ internal class DoorWatch : MonoBehaviour
     private void Update()
     {
         Preload.Watch();
+        Notice.Tick();
+        try
+        {
+            ToggleIfAsked();
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.LogDebug("Toggle: " + e.Message);
+        }
         try
         {
             WatchLoading();
@@ -187,6 +197,23 @@ internal class DoorWatch : MonoBehaviour
         Report(door);
         door = null;
         QuickDoors.DoorEnded();
+    }
+
+    // Prender o apagar el mod jugando (su tecla): desde la siguiente puerta. Queda guardado en el .cfg. Al prenderlo, la
+    // memoria de ahora es la referencia de la siguiente limpieza completa (apagado, el juego limpió en cada puerta).
+    private static void ToggleIfAsked()
+    {
+        if (!Plugin.ToggleKey.Value.IsDown())
+            return;
+        bool on = !Plugin.Enabled.Value;
+        Plugin.Enabled.Value = on;
+        if (on)
+            Cleanup.ResetBaseline();
+        bool es = (LLBase.CurrentLang ?? "").StartsWith("es", StringComparison.OrdinalIgnoreCase);
+        Notice.Show(on
+            ? (es ? "Smooth Doors: prendido — puertas rápidas" : "Smooth Doors: on — quick doors")
+            : (es ? "Smooth Doors: apagado — puertas como el juego sin mods" : "Smooth Doors: off — doors as in the unmodded game"));
+        Plugin.Log.LogInfo(on ? "Turned on with its key." : "Turned off with its key: doors as in the unmodded game.");
     }
 
     // Cuánto dura la pantalla de carga (al cargar una partida o al ir a otra escena), y cuánto de eso fue la precarga.
