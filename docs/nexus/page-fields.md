@@ -68,6 +68,13 @@ Until 0.9.0 there were two files: "Instant Transitions (with BepInEx)" (primary,
 
 - First public beta: doors and map travel in about 0.3 s, a map preload while a save loads, and Ctrl + Shift + O to turn it on and off.
 
+**0.9.1 published 2026-09-30** with Nexus's new editor (`/games/graveyardkeeper2/mods/206/edit/general`, `…/files`,
+`…/requirements`): the zip went in with "Update existing file" on "Instant Transitions" (without "Archive existing
+file", so 0.9.0 went to Old files), set as primary, with the changelog in the upload form ("One line per entry"). The
+"with BepInEx" 0.9.0 file: ⋮ → Edit → File category "Old". Notes: the counters under the text fields show the
+characters *left*, and if the Chrome window is hidden the page stops rendering and doesn't take what's typed; bring it
+to the front first. The public page shows requirement changes a while later (cache).
+
 ## Changelog 0.9.1
 
 - Doors never run the game's full memory clean-up any more: every third door removes one kind of editor-only component (about 30 ms), and a door unloads unused assets every 10 minutes or when memory grows by 300 MB (about 0.3 s). This fixes the long pauses at some doors and the lag that built up when the clean-up was pushed back. If you raised FullCleanupEveryMinutes, you can set it back to 10.
