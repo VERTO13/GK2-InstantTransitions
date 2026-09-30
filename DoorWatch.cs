@@ -29,6 +29,13 @@ internal class DoorWatch : MonoBehaviour
 
     private static readonly FieldInfo GuiElements = AccessTools.Field(typeof(LazyUI), "guiElementsDictionary");
     private static readonly FieldInfo Blackout = AccessTools.Field(typeof(UIBasicFade), "blackoutCanvas");
+    // La escena sin pasar por PlayerController.CurrentGameScene: esa propiedad escribe "[PlayerController]: no active game
+    // scene found" cada vez que todavía no hay escena, y la pantalla de carga se revisa en cada cuadro (un jugador vio el
+    // aviso 162 veces en una carga). Sin el campo (otra versión), esa fase de la carga simplemente no se cronometra.
+    private static readonly FieldInfo SceneField = AccessTools.Field(typeof(PlayerController), "currentGameScene");
+
+    private static bool HasScene(PlayerController player) =>
+        player != null && SceneField?.GetValue(player) is UnityEngine.Object scene && scene != null;
 
     private UIFade fade;
     private UILoadingOverlay overlay;   // la pantalla de carga: se cronometra cada vez que se muestra
@@ -86,7 +93,7 @@ internal class DoorWatch : MonoBehaviour
         // Aquí y no en Awake: para entonces BepInEx ya cargó todos los mods (para los reportes: cuántos hay).
         Plugin.Log.LogInfo($"{Plugin.Name} {Plugin.Version}: " +
                            (Plugin.Enabled.Value
-                               ? $"doors skip the full clean-up unless one is due (every {Plugin.FullEveryMinutes.Value:0.#} min or +{Plugin.FullWhenGrownMB.Value} MB); " +
+                               ? $"doors never do the full clean-up: editor components are removed while you play and unused assets are unloaded every {Plugin.FullEveryMinutes.Value:0.#} min or +{Plugin.FullWhenGrownMB.Value} MB; " +
                                  $"door fades {Plugin.FadeSeconds.Value:0.##} s, pause in black {Plugin.BlackPauseSeconds.Value:0.##} s. "
                                : "off: doors as in the unmodded game, only measured. ") +
                            $"{Plugin.ToggleKey.Value} turns it on and off while playing. " +
@@ -271,7 +278,7 @@ internal class DoorWatch : MonoBehaviour
             bool game = MainGame.Instance != null;
             if (saveAt == 0 && game && MainGame.PlayerData != null)
                 saveAt = Now();
-            if (sceneAt == 0 && game && MainGame.PlayerController != null && MainGame.PlayerController.CurrentGameScene != null)
+            if (sceneAt == 0 && game && HasScene(MainGame.PlayerController))
                 sceneAt = Now();
         }
         else if (loadStart != 0)
@@ -324,9 +331,12 @@ internal class DoorWatch : MonoBehaviour
         if (r.full)
             return $"full clean-up {r.TotalMs / 1000:0.00} s ({r.why}): unload {r.unloadMs / 1000:0.00}, GC {r.gcMs / 1000:0.00}, " +
                    $"strip {r.stripMs / 1000:0.00}" + (r.stripped >= 0 ? $" ({r.stripped} editor components)" : "") + errors;
+        string tidy = r.oneType != null ? $"; {r.oneType}: {r.oneTypeFound} removed in {r.oneTypeMs:0} ms" : "";
+        if (r.unloadOnly)
+            return $"unused assets unloaded in {r.unloadMs / 1000:0.00} s ({r.why}){tidy}{errors}";
         if (r.gcMs > 0)
-            return $"GC only {r.gcMs / 1000:0.00} s (the game has no incremental GC){errors}";
-        return "clean-up skipped, " + Cleanup.NextFull();
+            return $"GC only {r.gcMs / 1000:0.00} s (the game has no incremental GC){tidy}{errors}";
+        return "no full clean-up, " + Cleanup.NextFull() + tidy;
     }
 
     private void Report(Door d)

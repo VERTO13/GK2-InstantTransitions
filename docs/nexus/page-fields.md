@@ -11,7 +11,7 @@ code isn't public. The editor is SCEditor: paste the BBCode in its "View source"
 - **Name:** Instant Transitions
 - **Category:** Utilities
 - **Tags:** Performance Optimization, Quality of Life, AI Assisted
-- **Version:** 0.9.0
+- **Version:** 0.9.1
 - **Language:** English
 
 ## Gallery (in this order)
@@ -22,11 +22,14 @@ code isn't public. The editor is SCEditor: paste the BBCode in its "View source"
 
 ## Requirements
 
-Mod requirements (legacy), external resource:
+Mod requirements (legacy), external resource (the same as Crafting Queue since its 0.5.1):
 
 - **Name:** BepInEx 5.4.23.x
-- **Link:** https://github.com/BepInEx/BepInEx/releases
-- **Notes:** Already included in the "with BepInEx" file. Only needed if you download the mod-only file.
+- **Link:** https://github.com/BepInEx/BepInEx/releases/tag/v5.4.23.5
+- **Notes:** The mod loader. Download BepInEx_win_x64_5.4.23.5.zip and extract it into your game folder first. Skip it if you already have BepInEx 5.
+
+Until 0.9.0 the notes said it came in the "with BepInEx" file; since 0.9.1 BepInEx isn't bundled (OrionAF asked for it,
+and Crafting Queue did the same).
 
 ## Permissions and credits
 
@@ -34,8 +37,8 @@ Closed for now (decided 2026-09-28): the code isn't on GitHub yet. Nexus's "Use 
 and conversion not allowed; modification and asset use, ask the author; donation points and monetisation for others,
 not allowed. When the code goes public, switch to the MIT text Crafting Queue uses and link the repo.
 
-- **Third-party content:** Yes (I have permission). Only BepInEx, inside the "with BepInEx" file; its LGPL-2.1
-  license allows bundling it unmodified.
+- **Third-party content:** Yes (I have permission). Only BepInEx, inside the "with BepInEx" 0.9.0 file (now in Old
+  files, still downloadable, so this stays); its LGPL-2.1 license allows bundling it unmodified.
 - **Credits:**
 
 > BepInEx by the BepInEx team (LGPL-2.1): https://github.com/BepInEx/BepInEx - bundled unmodified in the "with BepInEx" file, as its license allows, and it keeps its own license. Everything else in Instant Transitions is original work.
@@ -48,12 +51,18 @@ Published 2026-09-28.
 
 ## Files (Main files)
 
+Since 0.9.1, one file:
+
 | File | Name on Nexus | Primary | Description |
 |---|---|---|---|
-| `InstantTransitions-0.9.0-with-BepInEx.zip` | Instant Transitions (with BepInEx) | yes | Pick this one if you're not sure: it includes BepInEx 5.4.23.5. Extract the zip into your game folder and choose Replace if Windows asks. |
-| `InstantTransitions-0.9.0.zip` | Instant Transitions | no | Only the mod, for players who already have BepInEx 5. Extract the zip into your game folder and choose Replace if Windows asks. |
+| `InstantTransitions-0.9.1.zip` | Instant Transitions | yes | Only the mod. Requires BepInEx 5 (installed separately, see the description). Extract into your game folder, next to GraveyardKeeper2.exe, and choose Replace if Windows asks. |
 
-Future versions: upload each zip with "Update existing file" on its counterpart, so Nexus keeps the history.
+Upload each version with "Update existing file" on "Instant Transitions", so Nexus keeps the history. The 0.9.0
+"Instant Transitions (with BepInEx)" file goes to **Old files** (edit it and change its category), like Crafting
+Queue's 0.4.16 files.
+
+Until 0.9.0 there were two files: "Instant Transitions (with BepInEx)" (primary, BepInEx 5.4.23.5 included) and
+"Instant Transitions" (mod only).
 
 ## Changelog 0.9.0
 
@@ -61,5 +70,10 @@ Future versions: upload each zip with "Update existing file" on its counterpart,
 
 ## Changelog 0.9.1
 
+- Doors never run the game's full memory clean-up any more: every third door removes one kind of editor-only component (about 30 ms), and a door unloads unused assets every 10 minutes or when memory grows by 300 MB (about 0.3 s). This fixes the long pauses at some doors and the lag that built up when the clean-up was pushed back. If you raised FullCleanupEveryMinutes, you can set it back to 10.
+- No fades by default: doors take about 0.1 s. If your settings had the old default (0.15), it moves to 0; set FadeSeconds to bring a fade back.
 - Loads on older versions of the game (a player on 1.004.2 got an error and the whole mod stopped): anything the game doesn't have yet now turns itself off, with a line in the log, instead of stopping the mod.
-- The log's first line now says the game version.
+- No more "[PlayerController]: no active game scene found" warnings from this mod while a save loads.
+- Scripted doors (like the exit of the tower above the base) are quick too, while the game moving you on its own (quests, story scenes, dialogs) keeps its own timing.
+- One download: BepInEx is no longer included. Install it separately (see the description).
+- The log's first line says the game version, and each door line says why a door kept the game's timing.

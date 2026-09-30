@@ -17,12 +17,12 @@ namespace InstantTransitions;
 //      componentes que solo sirven en el editor, para destruirlos. Medido: la mitad del tiempo de la limpieza.
 // En una partida a medias: unos 0.2 + 0.17 + 0.37 s, todo en un solo cuadro congelado.
 //
-// Aquí se reemplaza. En una puerta, si no toca limpieza completa, no se hace ninguno de los tres pasos: la
-// basura la sigue recogiendo por partes el recolector incremental del juego mientras juegas, y lo demás espera a
-// la siguiente limpieza completa. Toca cuando pasaron N minutos o la memoria creció M MB desde la última, al
-// cargar una partida (ahí ya se está esperando) o con el mod apagado; entonces se hacen los tres pasos como el
-// juego, en el mismo orden y con la misma espera, cronometrados. Si el juego no tuviera recolección incremental,
-// la de basura se sigue haciendo en cada puerta.
+// Aquí se reemplaza. En una puerta nunca se hace la búsqueda grande: los componentes de editor se van quitando
+// mientras se juega (Tidy: cada pieza nueva, y en cada puerta un solo tipo), y la basura la sigue recogiendo por
+// partes el recolector incremental del juego. Solo liberar los recursos sin usar (paso 1) se hace en una puerta, y
+// solo cuando toca: pasaron N minutos o la memoria creció M MB desde la última vez. Al cargar una partida (ahí ya se
+// está esperando) y con el mod apagado se hacen los tres pasos como el juego, en el mismo orden y con la misma
+// espera, cronometrados. Si el juego no tuviera recolección incremental, la de basura se sigue haciendo en cada puerta.
 //
 // Por qué es seguro parcharlo: el cuerpo original solo crea su máquina de estados (no lee campos estáticos de
 // clases del juego: ver la lección de Crafting Queue sobre MainGame y PlayerSkinHelper). Y la tarea que se
@@ -31,10 +31,14 @@ internal static class Cleanup
 {
     internal sealed class Run
     {
-        public bool full;       // los tres pasos (o solo la recolección de basura, si no es incremental)
-        public string why;      // por qué se hizo completa ("10 min", "+312 MB", "loading", "mod off")
+        public bool full;       // los tres pasos (al cargar una partida)
+        public bool unloadOnly; // en una puerta, cuando toca: solo liberar los recursos sin usar
+        public string why;      // por qué ("10 min since the last one", "memory +312 MB", "loading")
         public double unloadMs, gcMs, stripMs;
         public int stripped = -1; // componentes de editor destruidos (-1 = no se contaron)
+        public string oneType;    // en una puerta: el tipo de componente de editor que se buscó esta vez (Tidy)
+        public int oneTypeFound;
+        public double oneTypeMs;
         public bool failed;
         public double TotalMs => unloadMs + gcMs + stripMs;
     }
@@ -49,6 +53,7 @@ internal static class Cleanup
     private static float lastFullAt;          // Time.realtimeSinceStartup de la última limpieza completa
     private static long memoryAtLastFull;     // MB (Unity + basura administrada) justo después de ella
     private static bool anyFull;
+    private static int doorsSinceStrip;
 
     public static void Apply(Harmony harmony)
     {
@@ -75,7 +80,7 @@ internal static class Cleanup
     {
         float minutes = Math.Max(0f, Plugin.FullEveryMinutes.Value - (Time.realtimeSinceStartup - lastFullAt) / 60f);
         long mb = Math.Max(0L, Plugin.FullWhenGrownMB.Value - (MemoryMB() - memoryAtLastFull));
-        return $"next full one in {minutes:0.0} min or +{mb} MB";
+        return $"next unload in {minutes:0.0} min or +{mb} MB";
     }
 
     private const string Loading = "loading";
@@ -114,13 +119,30 @@ internal static class Cleanup
                 Plugin.Log.LogWarning("Clean-up decision: " + e.Message);
                 why = "error deciding";
             }
-            if (why != null)
+            if (why == Loading)
+            {
                 __result = Timed(new Run { full = true, why = why });
+                return false;
+            }
+            // Una puerta: si toca, solo liberar los recursos sin usar; y cada tercera puerta (o cuando se libera), un tipo
+            // de componente de editor por turno (~30 ms). Esos componentes se destruyen solos al activarse su objeto
+            // (Destroy(this) en Awake): la búsqueda solo recoge los que quedaron en objetos inactivos, así que no corre prisa.
+            Run run = new Run { why = why };
+            if (++doorsSinceStrip >= 3 || why != null)
+            {
+                doorsSinceStrip = 0;
+                Tidy.StripNextType(run);
+            }
+            if (why != null)
+            {
+                run.unloadOnly = true;
+                __result = Timed(run);
+            }
             else if (!GarbageCollector.isIncremental)
-                __result = Timed(new Run { full = false }); // sin recolección por partes: al menos la de basura
+                __result = Timed(run); // sin recolección por partes: al menos la de basura
             else
             {
-                try { DoorWatch.CleanupFinished(new Run { full = false }); }
+                try { DoorWatch.CleanupFinished(run); }
                 catch (Exception e) { Plugin.Log.LogWarning("Clean-up: " + e.Message); }
                 __result = UniTask.CompletedTask; // la puerta sigue sin congelarse
             }
@@ -158,7 +180,8 @@ internal static class Cleanup
         if (preload)
             LoadingLabel.Show(0, 1); // desde ya: la barra del juego ya está llena y la limpieza tarda casi 1 s
         long t0 = Stopwatch.GetTimestamp();
-        if (!run.full)
+        Action<Run, long> finish = run.unloadOnly ? FinishUnload : Finish;
+        if (!run.full && !run.unloadOnly)
         {
             try
             {
@@ -185,7 +208,7 @@ internal static class Cleanup
             run.failed = true;
             try
             {
-                Finish(run, t0);
+                finish(run, t0);
             }
             catch (Exception ex)
             {
@@ -202,7 +225,7 @@ internal static class Cleanup
         {
             try
             {
-                Finish(run, t0);
+                finish(run, t0);
             }
             catch (Exception ex)
             {
@@ -256,6 +279,24 @@ internal static class Cleanup
         DoorWatch.CleanupFinished(run);
     }
 
+    // En una puerta, cuando toca: solo liberar los recursos sin usar (la parte que de verdad libera memoria). La basura
+    // la recoge el recolector incremental, y los componentes de editor se van quitando mientras se juega (Tidy).
+    private static void FinishUnload(Run run, long t0)
+    {
+        long t1 = Stopwatch.GetTimestamp();
+        run.unloadMs = Ms(t0, t1);
+        if (!GarbageCollector.isIncremental)
+        {
+            try { GC.Collect(); }
+            catch (Exception e) { run.failed = true; Plugin.Log.LogWarning("Clean-up (GC): " + e.Message); }
+            run.gcMs = Ms(t1, Stopwatch.GetTimestamp());
+        }
+        anyFull = true;
+        lastFullAt = Time.realtimeSinceStartup;
+        memoryAtLastFull = MemoryMB();
+        DoorWatch.CleanupFinished(run);
+    }
+
     // Para la precarga: quitar ya los componentes de editor de lo recién cargado (cronometrado).
     internal static int StripNow(out double ms)
     {
@@ -291,18 +332,23 @@ internal static class Cleanup
         }
         int found = 0;
         foreach (Type type in types)
+            if (type != null)
+                found += StripType(type);
+        return found;
+    }
+
+    // Un tipo, en todo lo cargado (también lo inactivo): como EditorOnlyComponentStripper.StripType del juego.
+    internal static int StripType(Type type)
+    {
+        int found = 0;
+        foreach (UnityEngine.Object o in UnityEngine.Object.FindObjectsByType(type, FindObjectsInactive.Include, FindObjectsSortMode.None))
         {
-            if (type == null)
+            if (!(o is Component c) || c == null)
                 continue;
-            foreach (UnityEngine.Object o in UnityEngine.Object.FindObjectsByType(type, FindObjectsInactive.Include, FindObjectsSortMode.None))
-            {
-                if (!(o is Component c) || c == null)
-                    continue;
-                found++;
-                if (BoxMarker != null && BoxMarker.IsInstanceOfType(c) && c.gameObject.activeSelf)
-                    c.gameObject.SetActive(false);
-                UnityEngine.Object.Destroy(c);
-            }
+            found++;
+            if (BoxMarker != null && BoxMarker.IsInstanceOfType(c) && c.gameObject.activeSelf)
+                c.gameObject.SetActive(false);
+            UnityEngine.Object.Destroy(c);
         }
         return found;
     }

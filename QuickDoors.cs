@@ -146,15 +146,18 @@ internal static class QuickDoors
         StackFrame[] frames = new StackTrace(2, false).GetFrames();
         if (frames == null)
             return false;
-        bool script = false; // el nodo de teletransporte de un script: puerta solo si el jugador lo disparó
+        // Una expresión (puertas normales) o el nodo de teletransporte de un script (salidas como la de la torre) cuentan
+        // como puerta solo si más arriba, en la misma llamada, está PlayerInputHandler: el jugador la usó. Si no, es el
+        // juego moviéndolo por su cuenta (una misión, una escena) y se queda con los tiempos del juego.
+        string needsInput = null;
         foreach (StackFrame frame in frames)
         {
             for (Type t = frame.GetMethod()?.DeclaringType; t != null; t = t.DeclaringType) // las lambdas viven en tipos anidados
             {
-                if (script)
+                if (needsInput != null)
                 {
                     if (t == PlayerInput)
-                        return NothingElseGoingOn("scripted door", out why);
+                        return NothingElseGoingOn(needsInput, out why);
                     continue;
                 }
                 if (t == MapPage)
@@ -162,16 +165,20 @@ internal static class QuickDoors
                     why = "map";
                     return true;
                 }
-                if (t == Expression)
-                    return NothingElseGoingOn("door", out why);
                 if (t == Fights)
                 {
                     why = "fight";
                     return false;
                 }
+                if (t == Expression)
+                {
+                    needsInput = "door";
+                    why = "a game expression the player didn't start";
+                    continue;
+                }
                 if (t == ScriptTeleport)
                 {
-                    script = true;
+                    needsInput = "scripted door";
                     why = "a script the player didn't start";
                     continue;
                 }

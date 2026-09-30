@@ -9,10 +9,11 @@ namespace InstantTransitions;
 // Puertas sin congelones. En cada puerta y teletransporte, con la pantalla en negro, el juego hace una limpieza
 // completa (liberar recursos sin usar, recolección de basura y 24 búsquedas de "componentes de editor" por todo
 // lo cargado) que congela el juego unos 0.75 s. La recolección de basura del juego ya es por partes (Unity con
-// GC incremental), así que casi nunca hace falta en la puerta: aquí la limpieza completa solo se hace cuando toca
-// (cada tantos minutos o cuando la memoria creció) y siempre al cargar una partida. Cada puerta queda medida en
-// el log (cuánto tardó cada parte y cuánta memoria usa el juego), para comprobar que no sale más lenta ni gasta
-// más memoria.
+// GC incremental), así que en la puerta no hace falta: aquí una puerta nunca hace la limpieza completa. Cada tercera
+// puerta quita un solo tipo de componente de editor (unos 30 ms) y, cuando toca (cada tantos minutos o cuando la
+// memoria creció), una puerta libera los recursos sin usar (unos 0.3 s). Al cargar una partida, la limpieza completa
+// se hace como siempre. Cada puerta queda medida en el log (cuánto tardó cada parte y cuánta memoria usa el juego),
+// para comprobar que no sale más lenta ni gasta más memoria.
 [BepInPlugin(Guid, Name, Version)]
 public sealed class Plugin : BaseUnityPlugin
 {
@@ -40,11 +41,18 @@ public sealed class Plugin : BaseUnityPlugin
         ToggleKey = Config.Bind("Doors", "ToggleKey", new KeyboardShortcut(KeyCode.O, KeyCode.LeftControl, KeyCode.LeftShift),
             "Turns Instant Transitions on and off while playing, to compare doors with and without it. A notice shows the new state.");
         FullEveryMinutes = Config.Bind("Doors", "FullCleanupEveryMinutes", 10f,
-            "A door still gets the game's full clean-up once this many minutes have passed since the last one.");
+            "Doors never do the game's full clean-up: its editor-only components are removed while you play instead. " +
+            "Unloading unused assets (the part that frees memory, about 0.2 s) still happens at a door once this many " +
+            "minutes have passed since the last time.");
         FullWhenGrownMB = Config.Bind("Doors", "FullCleanupWhenMemoryGrowsMB", 300,
-            "Or sooner: once the game's memory has grown this much (MB) since the last full clean-up.");
-        FadeSeconds = Config.Bind("Doors", "FadeSeconds", 0.15f,
-            "Length of each fade (to black and back) on doors you use and on map travel. The game: 0.3.");
+            "Or sooner: once the game's memory has grown this much (MB) since the last time unused assets were unloaded.");
+        FadeSeconds = Config.Bind("Doors", "FadeSeconds", 0f,
+            "Length of each fade (to black and back) on doors you use and on map travel. 0 = no fade: the door takes " +
+            "about 0.1 s. The game: 0.3.");
+        // 0.9.0 traía 0.15 de fábrica: quien lo tiene así nunca lo cambió y pasa al de ahora (sin fundido). Cualquier
+        // otro valor lo eligió el jugador y se respeta.
+        if (Mathf.Approximately(FadeSeconds.Value, 0.15f))
+            FadeSeconds.Value = 0f;
         BlackPauseSeconds = Config.Bind("Doors", "BlackPauseSeconds", 0f,
             "Pause with the screen fully black before you are moved, on doors you use and on map travel. The game: 0.3. " +
             "Fights and story scenes keep the game's own fades and pause.");

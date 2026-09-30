@@ -1,1 +1,1 @@
-Doors and map travel in about 0.3 s instead of 1-2 s, and first visits almost as fast. Skips the game's full memory clean-up on most doors (it still runs every 10 minutes), shortens the fades and preloads the map while a save loads. Ctrl + Shift + O turns it on and off to compare.
+Doors and map travel in about 0.1 s instead of 1-2 s, and first visits almost as fast. Doors never run the game's full memory clean-up (it's spread out a little at a time), the fades are gone and the map preloads while a save loads. Ctrl + Shift + O turns it on and off to compare.
