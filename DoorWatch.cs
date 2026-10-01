@@ -172,6 +172,22 @@ internal class DoorWatch : MonoBehaviour
         }
         try
         {
+            WalkIn.Tick();
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.LogDebug("Walk into doors: " + e.Message);
+        }
+        try
+        {
+            HouseOpen.Tick();
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.LogDebug("House: " + e.Message);
+        }
+        try
+        {
             WatchLoading();
         }
         catch (Exception e)
@@ -237,6 +253,7 @@ internal class DoorWatch : MonoBehaviour
         Report(door);
         door = null;
         QuickDoors.DoorEnded();
+        HouseOpen.DoorEnded();
     }
 
     // Prender o apagar el mod jugando (su tecla): desde la siguiente puerta. Queda guardado en el .cfg. Al prenderlo, la
@@ -357,7 +374,8 @@ internal class DoorWatch : MonoBehaviour
         else
             parts = d.cleanup != null ? $"no fade; {Describe(d.cleanup)}" : "no fade, no clean-up";
         Plugin.Log.LogInfo($"[Door] {d.fromZone ?? "?"} -> {toZone ?? "?"} ({(sameScene ? "same scene" : $"scene {d.fromScene} -> {toScene}")}" +
-                           $"{(QuickDoors.LastWasQuick ? $", quick fades: {QuickDoors.LastWhy}" : QuickDoors.LastWhy.Length > 0 ? $", game's fades: {QuickDoors.LastWhy}" : "")}): " +
+                           $"{(QuickDoors.LastWasQuick ? $", quick fades: {QuickDoors.LastWhy}" : QuickDoors.LastWhy.Length > 0 ? $", game's fades: {QuickDoors.LastWhy}" : "")}" +
+                           $"{(HouseOpen.LastUsed ? ", the house opens" : "")}): " +
                            $"{Seconds(d.start, end):0.00} s = {parts} · longest frame {d.longestFrame:0.00} s ({d.slowFrames} over 0.1 s) · " +
                            $"GCs {GC.CollectionCount(0) - d.gcBefore} · managed {d.managedBefore} -> {ManagedMB()} MB · Unity {d.unityBefore} -> {UnityMB()} MB · " +
                            $"game process {d.processBefore} -> {ProcessMB()} MB");

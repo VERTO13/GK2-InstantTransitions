@@ -54,6 +54,14 @@ internal static class LoadingLabel
             root.SetActive(false);
     }
 
+    // Al descargar el mod (recarga en caliente): su objeto no se queda huérfano.
+    internal static void Shutdown()
+    {
+        if (root != null)
+            UnityEngine.Object.Destroy(root);
+        root = null;
+    }
+
     private static string Message()
     {
         string lang = LLBase.CurrentLang ?? "";

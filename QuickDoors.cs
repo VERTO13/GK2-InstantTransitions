@@ -75,6 +75,7 @@ internal static class QuickDoors
     private static void BeforeTeleport(TeleportDataBase teleportData)
     {
         LastTeleportAt = Time.realtimeSinceStartup;
+        HouseOpen.LastUsed = false;
         active = false;
         LastWasQuick = false;
         LastWhy = "";
@@ -86,6 +87,9 @@ internal static class QuickDoors
             activeUntil = Time.realtimeSinceStartup + 15f;
             LastWasQuick = true;
             teleportData.delayInFade = Mathf.Min(teleportData.delayInFade, Mathf.Max(0f, Plugin.BlackPauseSeconds.Value));
+            // La casa que se abre: el juego lo mueve sin fundido y HouseOpen anima la entrada (si es un edificio conocido).
+            if (HouseOpen.Begin(teleportData))
+                teleportData.donNotFade = true;
         }
         catch (Exception e)
         {
@@ -158,6 +162,8 @@ internal static class QuickDoors
                 {
                     if (t == PlayerInput)
                         return NothingElseGoingOn(needsInput, out why);
+                    if (t == typeof(WalkIn)) // el jugador caminó contra la puerta (WalkIn usa la puerta como la tecla)
+                        return NothingElseGoingOn(needsInput + ", walked in", out why);
                     continue;
                 }
                 if (t == MapPage)

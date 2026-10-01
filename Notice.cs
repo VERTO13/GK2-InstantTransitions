@@ -44,6 +44,14 @@ internal static class Notice
         }
     }
 
+    // Al descargar el mod (recarga en caliente): su objeto no se queda huérfano.
+    internal static void Shutdown()
+    {
+        if (root != null)
+            UnityEngine.Object.Destroy(root);
+        root = null;
+    }
+
     // Cada cuadro (DoorWatch): el último medio segundo se desvanece.
     internal static void Tick()
     {

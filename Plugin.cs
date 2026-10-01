@@ -28,6 +28,8 @@ public sealed class Plugin : BaseUnityPlugin
     internal static ConfigEntry<int> FullWhenGrownMB;
     internal static ConfigEntry<float> FadeSeconds;
     internal static ConfigEntry<float> BlackPauseSeconds;
+    internal static ConfigEntry<bool> WalkIntoDoors;
+    internal static ConfigEntry<bool> OpenHouses;
     internal static ConfigEntry<bool> PreloadPlaces;
     internal static ConfigEntry<float> PreloadMaxSeconds;
 
@@ -41,8 +43,8 @@ public sealed class Plugin : BaseUnityPlugin
         ToggleKey = Config.Bind("Doors", "ToggleKey", new KeyboardShortcut(KeyCode.O, KeyCode.LeftControl, KeyCode.LeftShift),
             "Turns Instant Transitions on and off while playing, to compare doors with and without it. A notice shows the new state.");
         FullEveryMinutes = Config.Bind("Doors", "FullCleanupEveryMinutes", 10f,
-            "Doors never do the game's full clean-up: its editor-only components are removed while you play instead. " +
-            "Unloading unused assets (the part that frees memory, about 0.2 s) still happens at a door once this many " +
+            "Doors never do the game's full clean-up: every third door removes one kind of its editor-only components instead. " +
+            "Unloading unused assets (the part that frees memory, about 0.3 s) still happens at a door once this many " +
             "minutes have passed since the last time.");
         FullWhenGrownMB = Config.Bind("Doors", "FullCleanupWhenMemoryGrowsMB", 300,
             "Or sooner: once the game's memory has grown this much (MB) since the last time unused assets were unloaded.");
@@ -56,6 +58,12 @@ public sealed class Plugin : BaseUnityPlugin
         BlackPauseSeconds = Config.Bind("Doors", "BlackPauseSeconds", 0f,
             "Pause with the screen fully black before you are moved, on doors you use and on map travel. The game: 0.3. " +
             "Fights and story scenes keep the game's own fades and pause.");
+        WalkIntoDoors = Config.Bind("Doors", "WalkIntoDoors", true,
+            "Go through a door by walking into it, without the interact key: keep walking toward the door for a moment while " +
+            "its prompt shows. false = doors only with the key, as in the game.");
+        OpenHouses = Config.Bind("Doors", "OpenHouses", true,
+            "Prototype, only your house for now: going in, the room appears small inside the house and grows to fill the " +
+            "screen while the outside darkens; going out, the other way round. No black. false = the usual quick cut.");
         PreloadPlaces = Config.Bind("Loading", "PreloadPlaces", true,
             "While a save loads, also load the pieces of the whole map that the game's own preload leaves out, so the first " +
             "visit to each place is as quick as the next ones. The loading screen takes a little longer and the game uses more memory.");
@@ -63,12 +71,33 @@ public sealed class Plugin : BaseUnityPlugin
             "The extra preload never makes the loading screen longer than this (seconds); what is left loads as usual.");
         // Los parches se ponen siempre, para poder prenderlo jugando; apagado, cada uno deja pasar al juego tal cual
         // (la limpieza original, los fundidos y la pausa de fábrica, sin precarga), y otro mod de puertas funciona igual.
-        Harmony harmony = new Harmony(Guid);
+        harmony = new Harmony(Guid);
+        // Recarga en caliente (ScriptEngine): si quedaron parches de la copia anterior, fuera antes de poner los nuevos.
+        harmony.UnpatchSelf();
         // Cada parte arranca por su lado: si a una le falta algo del juego (otra versión, como la 1.004.2), esa se
         // queda apagada y el log dice por qué, y las demás siguen. Antes una sola clase faltante tumbaba el mod entero.
         StartPart("the memory clean-up on doors", () => Cleanup.Apply(harmony));
         StartPart("the quick fades", () => QuickDoors.Apply(harmony));
         StartPart("the door log, loading line and preload", () => gameObject.AddComponent<DoorWatch>());
+    }
+
+    private Harmony harmony;
+
+    // Al descargar el mod sin cerrar el juego (ScriptEngine, para probar cambios): quitar sus parches y lo que creó. Al
+    // cerrar el juego no hace falta, pero no estorba.
+    private void OnDestroy()
+    {
+        try
+        {
+            harmony?.UnpatchSelf();
+            HouseOpen.Shutdown();
+            LoadingLabel.Shutdown();
+            Notice.Shutdown();
+        }
+        catch (System.Exception e)
+        {
+            Log.LogWarning("Unloading: " + e.Message);
+        }
     }
 
     private static void StartPart(string what, System.Action start)
