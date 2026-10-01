@@ -102,6 +102,17 @@ internal static class Cleanup
         return null;
     }
 
+    // En una puerta con corte, la vista de antes queda congelada mientras se limpia: liberar los recursos sin usar (~0.3 s)
+    // se vería como un tirón cada 10 minutos. Ahí solo se libera si la memoria creció el doble de lo normal; si no, espera
+    // a una puerta por negro, un viaje por el mapa o cargar una partida (las únicas veces que el juego limpia).
+    private static string DueAtCut()
+    {
+        if (!anyFull)
+            return null; // recién recargado el mod: no se sabe cuánto creció
+        long grown = MemoryMB() - memoryAtLastFull;
+        return grown >= 2L * Plugin.FullWhenGrownMB.Value ? $"memory +{grown} MB" : null;
+    }
+
     private static bool Instead(ref UniTask __result)
     {
         // Apagado (se puede cambiar jugando): la limpieza original del juego, tal cual.
@@ -156,6 +167,36 @@ internal static class Cleanup
             Plugin.Log.LogWarning("Clean-up: " + e.Message + " (the game's own clean-up runs instead)");
             HideLabel();
             return true;
+        }
+    }
+
+    // Una puerta sin la limpieza del juego: con el corte directo el juego mueve al jugador sin fundido y no llama a
+    // HiddenOptimization. Aquí va nuestra parte, igual que en una puerta normal (un tipo de componente de editor cada
+    // tercera puerta; liberar recursos sin usar cuando toca, sin esperar a que termine: Unity lo hace en segundo plano).
+    internal static void AtSilentDoor()
+    {
+        if (!Plugin.Enabled.Value)
+            return;
+        try
+        {
+            string why = DueAtCut();
+            Run run = new Run { why = why };
+            if (++doorsSinceStrip >= 3 || why != null)
+            {
+                doorsSinceStrip = 0;
+                Tidy.StripNextType(run);
+            }
+            if (why != null)
+            {
+                run.unloadOnly = true;
+                Timed(run); // termina sola (FinishUnload anota en el log)
+            }
+            else if (run.oneType != null)
+                Plugin.Log.LogInfo($"[Clean-up] at a cut door: {run.oneType}: {run.oneTypeFound} removed in {run.oneTypeMs:0} ms; {NextFull()}");
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.LogWarning("Clean-up at a cut door: " + e.Message);
         }
     }
 

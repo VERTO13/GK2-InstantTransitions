@@ -29,7 +29,7 @@ public sealed class Plugin : BaseUnityPlugin
     internal static ConfigEntry<float> FadeSeconds;
     internal static ConfigEntry<float> BlackPauseSeconds;
     internal static ConfigEntry<bool> WalkIntoDoors;
-    internal static ConfigEntry<bool> OpenHouses;
+    internal static ConfigEntry<bool> HardCut;
     internal static ConfigEntry<bool> PreloadPlaces;
     internal static ConfigEntry<float> PreloadMaxSeconds;
 
@@ -61,9 +61,10 @@ public sealed class Plugin : BaseUnityPlugin
         WalkIntoDoors = Config.Bind("Doors", "WalkIntoDoors", true,
             "Go through a door by walking into it, without the interact key: keep walking toward the door for a moment while " +
             "its prompt shows. false = doors only with the key, as in the game.");
-        OpenHouses = Config.Bind("Doors", "OpenHouses", true,
-            "Prototype, only your house for now: going in, the room appears small inside the house and grows to fill the " +
-            "screen while the outside darkens; going out, the other way round. No black. false = the usual quick cut.");
+        HardCut = Config.Bind("Doors", "HardCut", true,
+            "Doors you use inside the same place (home, yard, morgue...): no black at all. You are on the other side in the " +
+            "next frame, like a cut in a film (the old view holds for a few frames while the new place is drawn). " +
+            "false = the quick fade through black (FadeSeconds). Doors to another scene always go through black.");
         PreloadPlaces = Config.Bind("Loading", "PreloadPlaces", true,
             "While a save loads, also load the pieces of the whole map that the game's own preload leaves out, so the first " +
             "visit to each place is as quick as the next ones. The loading screen takes a little longer and the game uses more memory.");
@@ -90,7 +91,10 @@ public sealed class Plugin : BaseUnityPlugin
         try
         {
             harmony?.UnpatchSelf();
-            HouseOpen.Shutdown();
+            Cut.Shutdown();
+            WalkIn.Shutdown();
+            DoorPrewarm.Shutdown();
+            DoorCheck.Shutdown();
             LoadingLabel.Shutdown();
             Notice.Shutdown();
         }

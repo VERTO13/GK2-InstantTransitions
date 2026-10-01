@@ -75,7 +75,7 @@ internal static class QuickDoors
     private static void BeforeTeleport(TeleportDataBase teleportData)
     {
         LastTeleportAt = Time.realtimeSinceStartup;
-        HouseOpen.LastUsed = false;
+        Cut.LastUsed = false;
         active = false;
         LastWasQuick = false;
         LastWhy = "";
@@ -86,9 +86,10 @@ internal static class QuickDoors
             active = true;
             activeUntil = Time.realtimeSinceStartup + 15f;
             LastWasQuick = true;
+            WalkIn.CameThrough(teleportData.GetDestinationId());
             teleportData.delayInFade = Mathf.Min(teleportData.delayInFade, Mathf.Max(0f, Plugin.BlackPauseSeconds.Value));
-            // La casa que se abre: el juego lo mueve sin fundido y HouseOpen anima la entrada (si es un edificio conocido).
-            if (HouseOpen.Begin(teleportData))
+            // Corte directo: en la misma escena, sin negro; el juego lo mueve sin fundido y Cut tapa los cuadros del cambio.
+            if (SafeSameScene(teleportData) && Cut.Begin())
                 teleportData.donNotFade = true;
         }
         catch (Exception e)
@@ -96,6 +97,27 @@ internal static class QuickDoors
             active = false;
             Plugin.Log.LogWarning("Quick doors: " + e.Message);
         }
+    }
+
+    // ¿El destino está en la escena de ahora? (a otra escena hay pantalla de carga: ahí sigue el negro). En su propio
+    // método: si una versión del juego no tiene GetDestinationSceneData, falla solo esto y la puerta sigue con el negro.
+    private static bool SafeSameScene(TeleportDataBase teleportData)
+    {
+        try
+        {
+            return SameScene(teleportData);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static bool SameScene(TeleportDataBase teleportData)
+    {
+        string here = MainGame.PlayerData?.currentGameSceneId;
+        string there = teleportData.GetDestinationSceneData()?.id;
+        return !string.IsNullOrEmpty(here) && here == there;
     }
 
     // Un fundido del juego nunca debe fallar por culpa del mod: si algo sale mal, el fundido queda como el del juego.
