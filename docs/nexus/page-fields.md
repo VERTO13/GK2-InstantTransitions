@@ -18,8 +18,10 @@ code isn't public. The editor is SCEditor: paste the BBCode in its "View source"
 
 1. `thumbnail/thumbnail.png` (the mod's thumbnail): "Instant Transitions: walk into doors, no black screen"
 2. `docs/images/walk-in.gif` (0.10): "Walking through doors: without mods, then with Instant Transitions 0.10"
-3. `docs/images/doors-vs-vanilla.gif` (0.9): "Side by side: a door and a map trip, without mods and with Instant Transitions"
-4. `docs/images/loading.gif`: "The loading screen: the game loads, then Instant Transitions prepares every place on the map"
+3. `docs/images/loading.gif`: "The loading screen: the game loads, then Instant Transitions prepares every place on the map"
+
+The 0.9 thumbnail and `docs/images/doors-vs-vanilla.gif` were deleted from Nexus on 2026-10-01 (they showed the black
+that 0.10 removed). The GIF is still here; the old thumbnail is in the 0.9.0 commit.
 
 ## Requirements
 
@@ -95,3 +97,10 @@ to the front first. The public page shows requirement changes a while later (cac
 - Near a door, its other side loads ahead of time, so even a first visit doesn't stall the cut.
 - Doors with the cut only unload unused assets when memory grew a lot, so that 0.3 s never shows; doors through black and loading a save still do it.
 - During fights, doors only work with the key.
+
+**0.10.0 published 2026-10-01**, the same way as 0.9.1 ("Update existing file" without archiving, so 0.9.1 went to the
+previous files; changelog in the upload form). Media: "Add image(s)" for the thumbnail and the GIF, then each card's ⋮
+→ Edit title and Set as thumbnail. Reordering the gallery: a plain mouse drag drops the card on itself; it only moved
+with pointer events sent from the page (pointerdown on the card's grip, several pointermove, pointerup), then Save. The
+walk-in GIF is https://staticdelivery.nexusmods.com/mods/10208/images/206/206-1790845933-28489691.gif. On saving, the
+editor drops the blank line after each `[/list]` (it did in 0.9.1 too); the page looks the same.
