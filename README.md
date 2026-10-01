@@ -105,8 +105,10 @@ Settings live in `BepInEx\config\verto13.gk2.instanttransitions.cfg` (created th
 
 - It doesn't touch your saves or change any balance. Turn it off (or uninstall it) at any time.
 - Use only **one** mod that changes doors or the game's memory clean-up; two of them would fight over the same thing.
-- **Black screen after loading, or Jack missing at his boat?** Fixed in 0.10.1. It happened when you loaded a save made the night before a morning scene (like Jack's first visit) and a mod kept the loading screen up a few seconds longer at the very end: the game starts that scene before the loading screen is gone and then removes its speech bubble, so the scene waited forever. This mod's preload now runs earlier. If it still happens, another mod that preloads at the end of loading is doing the same.
+- **Black screen after loading, or Jack missing at his boat?** Since 0.10.1 this mod no longer causes it, but another mod still can. It happens when you load a save made the night before a morning scene (like Jack's first visit) and a mod keeps the loading screen up a few seconds longer at the very end: the game starts that scene before the loading screen is gone and then removes its speech bubble, so the scene waits forever. This mod's preload used to do that; now it runs earlier.
 - Tested with Graveyard Keeper 2 1.007.1 and BepInEx 5.4.23.5, alongside many other mods. It also loads on older versions of the game (1.004.2 and up): anything the game doesn't have yet turns itself off, with a line in the log.
+
+What each version changed: [release notes](CHANGELOG.md).
 
 ## Reporting bugs
 

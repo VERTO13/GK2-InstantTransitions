@@ -107,8 +107,8 @@ editor drops the blank line after each `[/list]` (it did in 0.9.1 too); the page
 
 ## Changelog 0.10.1
 
-- Fixed: loading a save made the night before a morning scene (like Jack's first visit about his boat) could leave the screen black, and Jack never went to his boat. The map preload now runs before the game starts those scenes.
-- If it still happens with 0.10.1, another mod is keeping the loading screen up longer at the very end. The description says exactly when it happens and why.
+- The map preload now runs before the game starts its morning scenes. Before, loading a save made the night before one (like Jack's first visit about his boat) could leave the screen black, and Jack never went to his boat.
+- It can still happen if another mod keeps the loading screen up longer at the very end. The description says exactly when it happens and why.
 
 **0.10.1 published 2026-10-01** (zip in `dist/`, built with `System.IO.Compression` so the paths inside use `/`;
 `Compress-Archive` writes `\`). The description got the "Black screen after loading, or Jack missing at his boat?"
@@ -122,3 +122,9 @@ position and typing did nothing, screenshots timed out. What worked, checking th
   because the editor's events don't mark the form as changed: from the hidden textarea's React fiber, go up to the
   component whose props have `onChange` and `value`, and call `onChange(text)`. Save turns on.
 The text was compared by SHA-256 before saving and after reloading (the saved one drops the line break after `[/list]`).
+
+Later that day the wording was softened at the author's request: nothing on the page says "fixed", because another mod
+can still cause the same thing ("since 0.10.1 this mod no longer causes it"). The description also got a
+**Release notes** section at the end (the same text as `CHANGELOG.md`): add each new version on top. The changelog of
+a file that is already uploaded is edited in the Files step: the row's ⋮ → "Edit changelog" (the menu opens with
+pointer events, not with a plain click).

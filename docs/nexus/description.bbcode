@@ -56,14 +56,14 @@ None of them clash with the game's own keys, and you can change them in the sett
 Doors, map travel and loading are measured and tested, and every door on the map was checked. If anything feels off, please post [b]BepInEx\LogOutput.log[/b] in the Bugs tab and say which door: every door, loading screen and clean-up is written there ([b][Door][/b], [b][Walk-in][/b], [b][Load][/b], [b][Preload][/b], [b][Prewarm][/b] and [b][Clean-up][/b] lines), which makes problems easy to find.
 
 [size=4][b][color=#ffd966]Black screen after loading, or Jack missing at his boat?[/color][/b][/size]
-Fixed in 0.10.1. It could happen when all three of these were true:
+Since 0.10.1 this mod no longer causes it, but another mod still can. It happens when all three of these are true:
 [list]
-[*]You [b]loaded[/b] a save. It never happens if you sleep and keep playing.
+[*]You [b]load[/b] a save. It doesn't happen if you sleep and keep playing.
 [*]That save was made the night before a morning scene, like Jack's first visit about his boat.
-[*]A mod kept the loading screen up a few seconds longer at the very end.
+[*]A mod keeps the loading screen up a few seconds longer at the very end.
 [/list]
-Why: the game starts that morning scene before the loading screen is gone, and when loading ends it removes every speech bubble. With those extra seconds the scene was already talking, lost its bubble and waited for it forever. This mod's map preload added those seconds (0.9 and 0.10.0); now it runs earlier, before the game starts anything.
-[b]Still happening with 0.10.1?[/b] Then another mod is adding those seconds: any mod that preloads or prepares things at the end of the loading screen can do it. Remove them one at a time, load that save again, and please tell me which one it was.
+Why: the game starts that morning scene before the loading screen is gone, and when loading ends it removes every speech bubble. With those extra seconds the scene is already talking, loses its bubble and waits for it forever. This mod's map preload used to add those seconds (0.9 and 0.10.0); since 0.10.1 it runs earlier, before the game starts anything.
+[b]Still happening?[/b] Then another mod is adding those seconds: any mod that preloads or prepares things at the end of the loading screen can do it. Remove them one at a time, load that save again, and please tell me which one it was.
 
 [size=4][b][color=#ffd966]Settings[/color][/b][/size]
 In [b]BepInEx\config\verto13.gk2.instanttransitions.cfg[/b] (created the first time you play), every setting explained inside:
@@ -94,6 +94,31 @@ In [b]BepInEx\config\verto13.gk2.instanttransitions.cfg[/b] (created the first t
 [*]No network access, no data collection, no game files or assets included.
 [*]Use only [b]one[/b] mod that changes doors or the game's memory clean-up; two of them would fight over the same thing.
 [*]Tested with Graveyard Keeper 2 1.007.1 and BepInEx 5.4.23.5, alongside many other mods. Also loads on older versions of the game (1.004.2 and up).
+[/list]
+
+[size=4][b][color=#ffd966]Release notes[/color][/b][/size]
+[b]0.10.1[/b]
+[list]
+[*]The map preload now runs before the game starts its morning scenes. Before, loading a save made the night before one (like Jack's first visit) could leave the screen black, and Jack never went to his boat. Another mod that makes the end of loading longer can still cause it.
+[/list]
+[b]0.10.0[/b]
+[list]
+[*]Doors and map travel cut straight to the other side: no black at all.
+[*]Walk into a door to go through it, no key needed. Hatches and ladders you climb keep the key.
+[*]The "[E] Enter" prompt over those doors is hidden.
+[*]New keys: Ctrl + Shift + C for walking in, Ctrl + Shift + H for the prompts.
+[*]Near a door, its other side loads ahead of time.
+[/list]
+[b]0.9.1[/b]
+[list]
+[*]Doors never run the game's full memory clean-up: no more long pauses at some doors.
+[*]No fades by default: doors take about 0.1 s.
+[*]Loads on older versions of the game.
+[*]BepInEx is no longer included in the download.
+[/list]
+[b]0.9.0[/b]
+[list]
+[*]First public beta: quick doors and map travel, a map preload while a save loads, and Ctrl + Shift + O to turn it on and off.
 [/list]
 
 Unofficial mod, not affiliated with Lazy Bear Games. Made with the help of AI (Claude). From the author of [url=https://www.nexusmods.com/graveyardkeeper2/mods/177]Crafting Queue[/url].

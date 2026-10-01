@@ -105,8 +105,10 @@ Los ajustes están en `BepInEx\config\verto13.gk2.instanttransitions.cfg` (se cr
 
 - No toca tus partidas ni cambia el balance. Puedes apagarlo (o quitarlo) cuando quieras.
 - Usa **un solo** mod que cambie las puertas o la limpieza de memoria del juego; dos se pelearían por lo mismo.
-- **¿Pantalla en negro al cargar, o Jack no está en su barco?** Arreglado en la 0.10.1. Pasaba al cargar una partida guardada la noche antes de una escena de la mañana (como la primera visita de Jack) si un mod alargaba unos segundos el final de la pantalla de carga: el juego arranca esa escena antes de quitar la pantalla de carga y luego le borra su globo de diálogo, así que la escena se quedaba esperando. La precarga de este mod ahora va antes. Si te sigue pasando, es otro mod que precarga al final de la carga.
+- **¿Pantalla en negro al cargar, o Jack no está en su barco?** Desde la 0.10.1 este mod ya no lo provoca, pero otro mod todavía puede. Pasa al cargar una partida guardada la noche antes de una escena de la mañana (como la primera visita de Jack) si un mod alarga unos segundos el final de la pantalla de carga: el juego arranca esa escena antes de quitar la pantalla de carga y luego le borra su globo de diálogo, así que la escena se queda esperando. La precarga de este mod lo hacía; ahora va antes.
 - Probado con Graveyard Keeper 2 1.007.1 y BepInEx 5.4.23.5, junto con muchos otros mods. También carga en versiones anteriores del juego (desde la 1.004.2): lo que el juego todavía no tiene se apaga solo, con una línea en el registro.
+
+Qué cambió cada versión: [notas de versión](CHANGELOG.md) (en inglés).
 
 ## Reportar errores
 
