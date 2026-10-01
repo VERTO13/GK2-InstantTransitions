@@ -109,3 +109,16 @@ editor drops the blank line after each `[/list]` (it did in 0.9.1 too); the page
 
 - Fixed: loading a save made the night before a morning scene (like Jack's first visit about his boat) could leave the screen black, and Jack never went to his boat. The map preload now runs before the game starts those scenes.
 - If it still happens with 0.10.1, another mod is keeping the loading screen up longer at the very end. The description says exactly when it happens and why.
+
+**0.10.1 published 2026-10-01** (zip in `dist/`, built with `System.IO.Compression` so the paths inside use `/`;
+`Compress-Archive` writes `\`). The description got the "Black screen after loading, or Jack missing at his boat?"
+section. Other mods are not named there: only the condition (a mod that keeps the loading screen up longer at the end).
+
+That time Chrome was on the other computer with its window hidden (`document.visibilityState` "hidden"): clicks by
+position and typing did nothing, screenshots timed out. What worked, checking the page text after each step:
+- buttons: `button.click()` from the page (Update, Add changelog, Save file, Save);
+- the zip: the extension's file upload on the row's file input; text fields: its form fill (version, changelog);
+- the description: `sceditor.instance(textarea)`, `sourceMode(true)`, `val(text)`, and then the form's own handler,
+  because the editor's events don't mark the form as changed: from the hidden textarea's React fiber, go up to the
+  component whose props have `onChange` and `value`, and call `onChange(text)`. Save turns on.
+The text was compared by SHA-256 before saving and after reloading (the saved one drops the line break after `[/list]`).

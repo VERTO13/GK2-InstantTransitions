@@ -31,7 +31,7 @@ namespace InstantTransitions;
 // MainGame.OnGameStarted borra todos los globos de diálogo (Bubble.OnGameStarted → UISpeechBubble.ForceRemoveAll) sin
 // avisar a nadie. Con la precarga metida ahí, la escena llevaba varios segundos corriendo detrás de la pantalla de
 // carga, el globo que estuviera puesto se borraba y el guion se quedaba esperándolo para siempre: pantalla en negro
-// al cargar, y Jack nunca llegaba al barco (reportes de Nexus, reproducido el 2026-10-02 con una partida guardada la
+// al cargar, y Jack nunca llegaba al barco (reportes de Nexus, reproducido el 2026-10-01 con una partida guardada la
 // noche antes de esa escena). Antes de AfterSceneHasLoaded todavía no ha empezado nada: es igual que un disco más lento.
 internal static class Preload
 {
