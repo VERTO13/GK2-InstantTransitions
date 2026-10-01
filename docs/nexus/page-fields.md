@@ -11,14 +11,15 @@ code isn't public. The editor is SCEditor: paste the BBCode in its "View source"
 - **Name:** Instant Transitions
 - **Category:** Utilities
 - **Tags:** Performance Optimization, Quality of Life, AI Assisted
-- **Version:** 0.9.1
+- **Version:** 0.10.0
 - **Language:** English
 
 ## Gallery (in this order)
 
-1. `thumbnail/thumbnail.png` (the mod's thumbnail): "Instant Transitions: doors and map travel without the freeze"
-2. `docs/images/doors-vs-vanilla.gif`: "Side by side: a door and a map trip, without mods and with Instant Transitions"
-3. `docs/images/loading.gif`: "The loading screen: the game loads, then Instant Transitions prepares every place on the map"
+1. `thumbnail/thumbnail.png` (the mod's thumbnail): "Instant Transitions: walk into doors, no black screen"
+2. `docs/images/walk-in.gif` (0.10): "Walking through doors: without mods, then with Instant Transitions 0.10"
+3. `docs/images/doors-vs-vanilla.gif` (0.9): "Side by side: a door and a map trip, without mods and with Instant Transitions"
+4. `docs/images/loading.gif`: "The loading screen: the game loads, then Instant Transitions prepares every place on the map"
 
 ## Requirements
 
@@ -55,7 +56,7 @@ Since 0.9.1, one file:
 
 | File | Name on Nexus | Primary | Description |
 |---|---|---|---|
-| `InstantTransitions-0.9.1.zip` | Instant Transitions | yes | Only the mod. Requires BepInEx 5 (installed separately, see the description). Extract into your game folder, next to GraveyardKeeper2.exe, and choose Replace if Windows asks. |
+| `InstantTransitions-0.10.0.zip` | Instant Transitions | yes | Only the mod. Requires BepInEx 5 (installed separately, see the description). Extract into your game folder, next to GraveyardKeeper2.exe, and choose Replace if Windows asks. |
 
 Upload each version with "Update existing file" on "Instant Transitions", so Nexus keeps the history. The 0.9.0
 "Instant Transitions (with BepInEx)" file goes to **Old files** (edit it and change its category), like Crafting
@@ -84,3 +85,13 @@ to the front first. The public page shows requirement changes a while later (cac
 - Scripted doors (like the exit of the tower above the base) are quick too, while the game moving you on its own (quests, story scenes, dialogs) keeps its own timing.
 - One download: BepInEx is no longer included. Install it separately (see the description).
 - The log's first line says the game version, and each door line says why a door kept the game's timing.
+
+## Changelog 0.10.0
+
+- Doors and map travel inside the same scene (the whole map is one) cut straight to the other side: no black at all, about three frames.
+- Walk into a door to go through it, no key needed. Where the floor ends before a door, your character walks on to it (or down the stairs) before the cut. Floor hatches and ladders you climb keep the key.
+- The "[E] Enter" prompt over doors you can walk into is hidden; Ctrl + Shift + H shows it again, and Ctrl + Shift + C turns walking in on and off.
+- The door you just came through waits until you let go of the movement key, turn around or walk away, so you don't bounce back.
+- Near a door, its other side loads ahead of time, so even a first visit doesn't stall the cut.
+- Doors with the cut only unload unused assets when memory grew a lot, so that 0.3 s never shows; doors through black and loading a save still do it.
+- During fights, doors only work with the key.

@@ -19,7 +19,7 @@ public sealed class Plugin : BaseUnityPlugin
 {
     public const string Guid = "verto13.gk2.instanttransitions";
     public const string Name = "Instant Transitions";
-    public const string Version = "0.9.1";
+    public const string Version = "0.10.0";
 
     internal static ManualLogSource Log;
     internal static ConfigEntry<bool> Enabled;
@@ -30,6 +30,9 @@ public sealed class Plugin : BaseUnityPlugin
     internal static ConfigEntry<float> BlackPauseSeconds;
     internal static ConfigEntry<bool> WalkIntoDoors;
     internal static ConfigEntry<bool> HardCut;
+    internal static ConfigEntry<KeyboardShortcut> WalkInKey;
+    internal static ConfigEntry<bool> HideDoorPrompts;
+    internal static ConfigEntry<KeyboardShortcut> PromptsKey;
     internal static ConfigEntry<bool> PreloadPlaces;
     internal static ConfigEntry<float> PreloadMaxSeconds;
 
@@ -37,34 +40,46 @@ public sealed class Plugin : BaseUnityPlugin
     {
         Log = Logger;
         Enabled = Config.Bind("Doors", "Enabled", true,
-            "Doors skip the game's full memory clean-up (the freeze while the screen is black) unless one is due, fade faster " +
-            "and preload places. false = everything as in the unmodded game; the mod only measures doors in the log. " +
+            "Doors cut straight to the other side (no black, no freeze), you can walk into them, and places load ahead of time. " +
+            "false = everything as in the unmodded game; the mod only measures doors in the log. " +
             "Can be switched while playing with ToggleKey.");
         ToggleKey = Config.Bind("Doors", "ToggleKey", new KeyboardShortcut(KeyCode.O, KeyCode.LeftControl, KeyCode.LeftShift),
             "Turns Instant Transitions on and off while playing, to compare doors with and without it. A notice shows the new state.");
         FullEveryMinutes = Config.Bind("Doors", "FullCleanupEveryMinutes", 10f,
             "Doors never do the game's full clean-up: every third door removes one kind of its editor-only components instead. " +
-            "Unloading unused assets (the part that frees memory, about 0.3 s) still happens at a door once this many " +
-            "minutes have passed since the last time.");
+            "Unloading unused assets (the part that frees memory, about 0.3 s) happens at a door that goes through black " +
+            "once this many minutes have passed since the last time. Doors with the cut (no black) only do it when memory " +
+            "grew twice FullCleanupWhenMemoryGrowsMB, so it doesn't show; loading a save always does it.");
         FullWhenGrownMB = Config.Bind("Doors", "FullCleanupWhenMemoryGrowsMB", 300,
             "Or sooner: once the game's memory has grown this much (MB) since the last time unused assets were unloaded.");
         FadeSeconds = Config.Bind("Doors", "FadeSeconds", 0f,
-            "Length of each fade (to black and back) on doors you use and on map travel. 0 = no fade: the door takes " +
-            "about 0.1 s. The game: 0.3.");
+            "Length of each fade (to black and back) on the doors that still go through black: doors to another scene, and " +
+            "every door and map trip when HardCut is false. 0 = no fade (about 0.1 s). The game: 0.3.");
         // 0.9.0 traía 0.15 de fábrica: quien lo tiene así nunca lo cambió y pasa al de ahora (sin fundido). Cualquier
         // otro valor lo eligió el jugador y se respeta.
         if (Mathf.Approximately(FadeSeconds.Value, 0.15f))
             FadeSeconds.Value = 0f;
         BlackPauseSeconds = Config.Bind("Doors", "BlackPauseSeconds", 0f,
-            "Pause with the screen fully black before you are moved, on doors you use and on map travel. The game: 0.3. " +
+            "Pause with the screen fully black before you are moved, on the doors that still go through black. The game: 0.3. " +
             "Fights and story scenes keep the game's own fades and pause.");
         WalkIntoDoors = Config.Bind("Doors", "WalkIntoDoors", true,
-            "Go through a door by walking into it, without the interact key: keep walking toward the door for a moment while " +
-            "its prompt shows. false = doors only with the key, as in the game.");
+            "Go through a door by walking into it, without the interact key: you go in right as you reach it. Hatches in the " +
+            "floor keep the key. The door you just came through waits until you let go of the movement key, turn around or " +
+            "walk away from it, so you don't bounce back. Off during fights. false = doors only with the key, as in the game.");
         HardCut = Config.Bind("Doors", "HardCut", true,
-            "Doors you use inside the same place (home, yard, morgue...): no black at all. You are on the other side in the " +
-            "next frame, like a cut in a film (the old view holds for a few frames while the new place is drawn). " +
+            "Doors and map travel inside the same scene (home, yard, tavern, morgue... the whole map is one scene): no black " +
+            "at all. You are on the other side right away, like a cut in a film (the old view holds a few frames while the " +
+            "new place is drawn). Near a door, its other side loads ahead of time so the cut never waits. " +
             "false = the quick fade through black (FadeSeconds). Doors to another scene always go through black.");
+        WalkInKey = Config.Bind("Doors", "WalkInKey", new KeyboardShortcut(KeyCode.C, KeyCode.LeftControl, KeyCode.LeftShift),
+            "Turns walking into doors (WalkIntoDoors) on and off while playing. Off, every door works with the interact key " +
+            "and shows its prompt again. A notice shows the new state.");
+        HideDoorPrompts = Config.Bind("Doors", "HideDoorPrompts", true,
+            "Hides the \"[E] Enter / Exit\" prompt over the doors you can walk into, so they feel like part of the map. " +
+            "Hatches in the floor and ladders you climb keep theirs, and the interact key still works on every door. " +
+            "Can be switched while playing with PromptsKey.");
+        PromptsKey = Config.Bind("Doors", "PromptsKey", new KeyboardShortcut(KeyCode.H, KeyCode.LeftControl, KeyCode.LeftShift),
+            "Shows or hides the door prompts while playing. A notice shows the new state.");
         PreloadPlaces = Config.Bind("Loading", "PreloadPlaces", true,
             "While a save loads, also load the pieces of the whole map that the game's own preload leaves out, so the first " +
             "visit to each place is as quick as the next ones. The loading screen takes a little longer and the game uses more memory.");
@@ -79,6 +94,7 @@ public sealed class Plugin : BaseUnityPlugin
         // queda apagada y el log dice por qué, y las demás siguen. Antes una sola clase faltante tumbaba el mod entero.
         StartPart("the memory clean-up on doors", () => Cleanup.Apply(harmony));
         StartPart("the quick fades", () => QuickDoors.Apply(harmony));
+        StartPart("hiding the door prompts", () => DoorPrompts.Apply(harmony));
         StartPart("the door log, loading line and preload", () => gameObject.AddComponent<DoorWatch>());
     }
 
@@ -94,7 +110,6 @@ public sealed class Plugin : BaseUnityPlugin
             Cut.Shutdown();
             WalkIn.Shutdown();
             DoorPrewarm.Shutdown();
-            DoorCheck.Shutdown();
             LoadingLabel.Shutdown();
             Notice.Shutdown();
         }

@@ -3,23 +3,29 @@
 <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@700&family=VT323&display=swap" rel="stylesheet">
 <style>
   html, body { margin:0; width:1920px; height:1080px; overflow:hidden; background:#000; }
-  /* Fondo: el patio al 200 % (pixeles exactos), con la casa y el personaje recién salido por su puerta a la derecha */
-  .world { position:absolute; inset:0; background:url('base.png') no-repeat; background-size:3840px 2160px;
-           background-position:-468px -260px; image-rendering:pixelated; }
-  /* Del lado del título, como un fundido a negro que se abre hacia la escena */
+  /* Afuera: el patio al 200 %, con el personaje llegando a la puerta de la casa */
+  .outside { position:absolute; inset:0; background:url('fuera.png') no-repeat; background-position:-40px 0; image-rendering:pixelated; }
+  /* Adentro, en el cuadro siguiente: el interior de la casa al 200 %, cortado en diagonal como un empalme de película */
+  .inside { position:absolute; inset:0; background:#0b0807 url('dentro.png') no-repeat; background-position:930px 0; image-rendering:pixelated;
+            clip-path: polygon(1250px 0, 1920px 0, 1920px 1080px, 1070px 1080px); }
+  .seam { position:absolute; left:1160px; top:-40px; width:6px; height:1160px; background:#ffd966;
+          transform: rotate(9.5deg); transform-origin: 50% 50%;
+          box-shadow: 0 0 0 3px #2a1a0e, 0 0 26px 6px rgba(255,217,102,.55); }
+  .tag { position:absolute; left:1000px; top:470px; font-family:'VT323', monospace; font-size:54px; color:#1b120c;
+         background:#ffd966; padding:2px 18px 6px; outline:4px solid #2a1a0e; transform: rotate(9.5deg); }
+  /* Del lado del título, oscuro para que se lea */
   .fade { position:absolute; inset:0;
-          background:linear-gradient(90deg, rgba(0,0,0,.9) 0%, rgba(0,0,0,.78) 34%, rgba(0,0,0,.25) 58%, rgba(0,0,0,0) 72%); }
-  .title { position:absolute; left:72px; top:70px; font-family:'Pixelify Sans', monospace; }
-  .title h1 { margin:0; font-size:150px; line-height:.95; color:#ffd966; letter-spacing:2px;
+          background:linear-gradient(90deg, rgba(0,0,0,.88) 0%, rgba(0,0,0,.72) 30%, rgba(0,0,0,.2) 50%, rgba(0,0,0,0) 60%); }
+  .title { position:absolute; left:72px; top:64px; font-family:'Pixelify Sans', monospace; }
+  .title h1 { margin:0; font-size:138px; line-height:.95; color:#ffd966; letter-spacing:2px;
               text-shadow: 6px 0 #2a1a0e, -6px 0 #2a1a0e, 0 6px #2a1a0e, 0 -6px #2a1a0e,
                            6px 6px #2a1a0e, -6px 6px #2a1a0e, 6px -6px #2a1a0e, -6px -6px #2a1a0e, 0 14px 0 rgba(0,0,0,.55); }
-  .title p { margin:30px 0 0; font-size:54px; line-height:1.15; color:#fff4e0;
+  .title p { margin:28px 0 0; font-size:56px; line-height:1.15; color:#fff4e0;
              text-shadow: 4px 0 #1b120c, -4px 0 #1b120c, 0 4px #1b120c, 0 -4px #1b120c, 4px 4px #1b120c, -4px 4px #1b120c, 4px -4px #1b120c, -4px -4px #1b120c; }
   .title p b { color:#9be07a; }
-  /* Lo que se nota: el tiempo de una puerta */
   .time { position:absolute; left:72px; bottom:84px; font-family:'Pixelify Sans', monospace; display:flex; align-items:baseline; gap:34px;
-          padding:22px 36px 26px; background:rgba(20,14,10,.82); outline:6px solid #1b120c; box-shadow:0 0 0 10px #c89b5a, 0 24px 60px rgba(0,0,0,.7); }
-  .time .label { position:absolute; left:36px; top:-66px; font-size:40px; color:#e8dcc4;
+          padding:22px 36px 26px; background:rgba(20,14,10,.84); outline:6px solid #1b120c; box-shadow:0 0 0 10px #c89b5a, 0 24px 60px rgba(0,0,0,.7); }
+  .time .label { position:absolute; left:36px; top:-66px; font-size:40px; color:#e8dcc4; white-space:nowrap;
                  text-shadow: 3px 0 #1b120c, -3px 0 #1b120c, 0 3px #1b120c, 0 -3px #1b120c; }
   .time .old, .time .new { font-family:'VT323', monospace; line-height:.8; }
   .time .old { font-size:120px; color:#8a7d6c; }
@@ -27,14 +33,17 @@
   .time .new { font-size:150px; color:#9be07a; }
 </style></head>
 <body>
-  <div class="world"></div>
+  <div class="outside"></div>
+  <div class="inside"></div>
+  <div class="seam"></div>
+  <div class="tag">next frame</div>
   <div class="fade"></div>
   <div class="title">
     <h1>Instant<br>Transitions</h1>
-    <p>Doors &amp; map travel<br><b>without the freeze</b></p>
+    <p>Walk into doors<br><b>no black screen</b></p>
   </div>
   <div class="time">
-    <span class="label">per door</span>
-    <span class="old">1.5 s</span><span class="arrow">→</span><span class="new">0.3 s</span>
+    <span class="label">black screen per door</span>
+    <span class="old">2 s</span><span class="arrow">→</span><span class="new">0 s</span>
   </div>
 </body></html>

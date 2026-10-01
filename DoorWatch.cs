@@ -93,10 +93,13 @@ internal class DoorWatch : MonoBehaviour
         // Aquí y no en Awake: para entonces BepInEx ya cargó todos los mods (para los reportes: cuántos hay).
         Plugin.Log.LogInfo($"{Plugin.Name} {Plugin.Version}: " +
                            (Plugin.Enabled.Value
-                               ? $"doors never do the full clean-up: editor components are removed while you play and unused assets are unloaded every {Plugin.FullEveryMinutes.Value:0.#} min or +{Plugin.FullWhenGrownMB.Value} MB; " +
-                                 $"door fades {Plugin.FadeSeconds.Value:0.##} s, pause in black {Plugin.BlackPauseSeconds.Value:0.##} s. "
+                               ? $"doors {(Plugin.HardCut.Value ? "cut with no black" : "go through black")}" +
+                                 $"{(Plugin.WalkIntoDoors.Value ? ", you walk into them" : "")}{(Plugin.HideDoorPrompts.Value ? ", their prompts hidden" : "")}; " +
+                                 $"never the full clean-up (unused assets unloaded every {Plugin.FullEveryMinutes.Value:0.#} min or +{Plugin.FullWhenGrownMB.Value} MB at doors through black); " +
+                                 $"fades {Plugin.FadeSeconds.Value:0.##} s, pause in black {Plugin.BlackPauseSeconds.Value:0.##} s. "
                                : "off: doors as in the unmodded game, only measured. ") +
-                           $"{Plugin.ToggleKey.Value} turns it on and off while playing. " +
+                           $"{Plugin.ToggleKey.Value} turns it on and off, {Plugin.WalkInKey.Value} walking into doors, " +
+                           $"{Plugin.PromptsKey.Value} the door prompts. " +
                            $"Graveyard Keeper 2 {Application.version}, Unity {Application.unityVersion}, incremental GC {GarbageCollector.isIncremental}, " +
                            $"system RAM {SystemInfo.systemMemorySize} MB, {Chainloader.PluginInfos.Count} BepInEx plugins: " +
                            string.Join(", ", Chainloader.PluginInfos.Values.Select(p => p.Metadata.Name)));
@@ -167,6 +170,8 @@ internal class DoorWatch : MonoBehaviour
         try
         {
             ToggleIfAsked();
+            TogglePromptsIfAsked();
+            ToggleWalkInIfAsked();
         }
         catch (Exception e)
         {
@@ -192,7 +197,6 @@ internal class DoorWatch : MonoBehaviour
             Plugin.Log.LogDebug("Cut: " + e.Message);
         }
         DoorPrewarm.Tick(); // atrapa lo suyo
-        DoorCheck.Tick();
         try
         {
             WatchLoading();
@@ -277,6 +281,37 @@ internal class DoorWatch : MonoBehaviour
             ? (es ? "Instant Transitions: prendido — puertas rápidas" : "Instant Transitions: on — quick doors")
             : (es ? "Instant Transitions: apagado — puertas como el juego sin mods" : "Instant Transitions: off — doors as in the unmodded game"));
         Plugin.Log.LogInfo(on ? "Turned on with its key." : "Turned off with its key: doors as in the unmodded game.");
+        DoorPrompts.Refresh();
+    }
+
+    // Entrar caminando, prendido o apagado jugando: apagado, todas las puertas van con la tecla y muestran su aviso.
+    private static void ToggleWalkInIfAsked()
+    {
+        if (!Plugin.WalkInKey.Value.IsDown())
+            return;
+        bool on = !Plugin.WalkIntoDoors.Value;
+        Plugin.WalkIntoDoors.Value = on;
+        bool es = (LLBase.CurrentLang ?? "").StartsWith("es", StringComparison.OrdinalIgnoreCase);
+        Notice.Show(on
+            ? (es ? "Entrar caminando: prendido — basta con caminar hacia la puerta" : "Walk into doors: on — just walk into them")
+            : (es ? "Entrar caminando: apagado — las puertas van con la tecla de interactuar" : "Walk into doors: off — doors use the interact key"));
+        Plugin.Log.LogInfo(on ? "Walking into doors turned on with its key." : "Walking into doors turned off with its key.");
+        DoorPrompts.Refresh();
+    }
+
+    // Los avisos "[E] Entrar" de las puertas a las que se entra caminando: se muestran u ocultan jugando.
+    private static void TogglePromptsIfAsked()
+    {
+        if (!Plugin.PromptsKey.Value.IsDown())
+            return;
+        bool hide = !Plugin.HideDoorPrompts.Value;
+        Plugin.HideDoorPrompts.Value = hide;
+        bool es = (LLBase.CurrentLang ?? "").StartsWith("es", StringComparison.OrdinalIgnoreCase);
+        Notice.Show(hide
+            ? (es ? "Avisos de puertas: ocultos — se entra caminando" : "Door prompts: hidden — walk into doors")
+            : (es ? "Avisos de puertas: visibles" : "Door prompts: shown"));
+        Plugin.Log.LogInfo(hide ? "Door prompts hidden with their key." : "Door prompts shown with their key.");
+        DoorPrompts.Refresh();
     }
 
     // Cuánto dura la pantalla de carga (al cargar una partida o al ir a otra escena), y cuánto de eso fue la precarga.

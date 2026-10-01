@@ -144,7 +144,6 @@ internal static class WalkIn
         {
             Plugin.Log.LogInfo($"[Walk-in] door in reach: {wgo.Data.id}, to {string.Join(", ", wgo.Data.Definition.teleportDestinationWgoIds)}; " +
                                $"you at {pos}, the door object at {wgo.transform.position}");
-            DescribeView(player);
         }
         Vector2 input = LazyInput.GetDirection();
         if (input.sqrMagnitude <= 0.04f)
@@ -384,12 +383,14 @@ internal static class WalkIn
         return state == FightState.ActiveFight;
     }
 
-    private static bool IsHatch(Wgo door)
+    private static bool IsHatch(Wgo door) => IsHatch(door.Data);
+
+    private static bool IsHatch(WgoData door)
     {
-        string id = door.Data.id ?? "?";
+        string id = door.id ?? "?";
         if (hatches.TryGetValue(id, out bool known))
             return known;
-        bool isHatch = HatchByData(door.Data, out string detail);
+        bool isHatch = HatchByData(door, out string detail);
         hatches[id] = isHatch;
         Plugin.Log.LogInfo($"[Walk-in] {id}: {(isHatch ? "a hatch in the floor, only with the key" : "a door")} ({detail})");
         return isHatch;
@@ -693,29 +694,23 @@ internal static class WalkIn
         return used;
     }
 
+    // DoorPrompts: ¿a esta se entra caminando ahora? (puerta, no trampilla, el mod y la opción prendidos, sin pelea)
+    internal static bool WalksInto(WgoData data) =>
+        Plugin.Enabled.Value && Plugin.WalkIntoDoors.Value && !broken && IsDoor(data) && !IsHatch(data) && !InFight();
+
+    // El objeto que el juego tiene enfocado (el del aviso), o null.
+    internal static Wgo Focused()
+    {
+        PlayerController player = MainGame.Instance != null ? MainGame.PlayerController : null;
+        object handler = player != null ? InputHandlerField?.GetValue(player) : null;
+        var interaction = handler != null ? InteractionField?.GetValue(handler) as PlayerInteractionComponent : null;
+        return interaction != null && interaction.HasWgoUnderInteraction ? interaction.WgoUnderInteraction : null;
+    }
+
     internal static bool IsDoor(WgoData data)
     {
         WGODef def = data.Definition;
         return def != null && def.interactionType != WGODef.InteractionType.TeleportMilestone
                && def.teleportDestinationWgoIds != null && def.teleportDestinationWgoIds.Count > 0;
-    }
-
-    // Prueba de una vez: dónde queda el dibujo del personaje (PlayerView) y si su sombra y sus partes van con él.
-    private static bool viewDescribed;
-
-    internal static void DescribeView(PlayerController player)
-    {
-        if (viewDescribed || player == null || player.View == null)
-            return;
-        viewDescribed = true;
-        Transform vt = player.View.transform;
-        var shadow = AccessTools.Field(typeof(PlayerView), "cylinderShadowcaster")?.GetValue(player.View) as Transform;
-        IEnumerable<string> elsewhere = player.GetComponentsInChildren<Renderer>(true)
-            .Concat(player.PhysicalBody != null ? player.PhysicalBody.GetComponentsInChildren<Renderer>(true) : Enumerable.Empty<Renderer>())
-            .Where(r => !r.transform.IsChildOf(vt)).Select(r => r.name).Distinct().Take(12);
-        Plugin.Log.LogInfo($"[Walk-in] the player's drawing: {vt.name} under {(vt.parent != null ? vt.parent.name : "nothing")}, " +
-                           $"{vt.GetComponentsInChildren<Renderer>(true).Length} renderers under it; its shadow " +
-                           $"{(shadow == null ? "none" : shadow.IsChildOf(vt) ? "under it" : "elsewhere, under " + (shadow.parent != null ? shadow.parent.name : "nothing"))}; " +
-                           $"player renderers not under it: {string.Join(", ", elsewhere)}");
     }
 }

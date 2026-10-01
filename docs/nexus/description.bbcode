@@ -1,45 +1,69 @@
 [center][size=5][b][color=#ffd966]Instant Transitions[/color][/b][/size]
-[size=3]Doors and map travel in about 0.1 seconds, and first visits almost as fast.[/size][/center]
+[size=3]Walk into a door and you're on the other side in the same instant. No black screen, no freeze.[/size][/center]
 
-Every door in Graveyard Keeper 2 freezes the game with the screen black for 1 to 2 seconds, and longer the more mods you have. Instant Transitions takes that down to about [b]0.1 seconds[/b].
+Every door in Graveyard Keeper 2 freezes the game with the screen black for 1 to 2 seconds, and longer the more mods you have. With Instant Transitions the whole map feels like one place: you [b]walk into[/b] a door and, in the same instant, you're on the other side, still walking.
 
-[center][img]https://staticdelivery.nexusmods.com/mods/10208/images/206/206-1790585944-557747428.gif[/img]
-[i]Recorded with 0.9.0, when doors still faded for 0.15 s. Since 0.9.1 there's no fade, so doors are quicker still.[/i][/center]
+[center][img]WALK_IN_GIF_URL[/img]
+[i]Without mods, then with Instant Transitions 0.10.[/i][/center]
+
+[size=4][b][color=#ffd966]New in 0.10[/color][/b][/size]
+[list]
+[*][b]No black at all.[/b] Doors and map travel cut straight to the other side, like a cut in a film (about three frames).
+[*][b]Walk in.[/b] No need to press E: walk into a door and you go through just as you reach it, without bumping into it.
+[*][b]No prompt.[/b] The "[E] Enter" over those doors is hidden, so they feel like part of the map.
+[*][b]Hatches and ladders keep the key.[/b] Floor hatches still use E, and so do ladders you climb.
+[*][b]No bouncing back.[/b] The door you just came through waits until you let go of the movement key, turn around or walk away.
+[*][b]Ready before you arrive.[/b] Near a door, its other side loads ahead of time, so even a first visit doesn't stall.
+[*][b]Three keys[/b] to switch the mod, walking in and the prompts while playing (see Keys).
+[/list]
 
 [size=4][b][color=#ffd966]Measured[/color][/b][/size]
 [list]
-[*][b]A door[/b] (home ↔ yard): 1.4–1.9 s without mods, up to 2.6 s with many mods → [color=#9be07a][b]~0.1 s[/b][/color]
-[*][b]Map travel:[/b] ~1.8 s → [color=#9be07a][b]~0.1 s[/b][/color]
-[*][b]First visit to a place:[/b] an extra 0.3–1.3 s while it loads → [color=#9be07a][b]almost the same as any other visit[/b][/color]
+[*][b]A door[/b] (home ↔ yard): 1.4–1.9 s of black without mods, up to 2.6 s with many mods → [color=#9be07a][b]~0.05 s, no black[/b][/color]
+[*][b]Map travel:[/b] ~1.8 s of black → [color=#9be07a][b]~0.05 s, no black[/b][/color]
+[*][b]First visit to a place:[/b] an extra 0.3–1.3 s while it loads → [color=#9be07a][b]the same as any other visit[/b][/color]
 [*][b]Loading a save:[/b] about 5 s longer, with a progress line (see below)
 [/list]
 
 [size=4][b][color=#ffd966]How[/color][/b][/size]
 
-[b]No freeze at every door[/b]
-With the screen black, the game runs a full memory clean-up on every door: it unloads unused assets, collects garbage and searches everything loaded, 24 times over, for editor-only components. That's most of the wait. This mod never does it all at once: every third door removes one of the 24 kinds of editor-only components (about 30 ms), so nothing piles up, and a door unloads unused assets [b]every 10 minutes[/b] or when memory grows by 300 MB (about 0.3 s). The game's garbage collector already works in small steps while you play. While a save loads, the full clean-up runs as usual.
+[b]A cut instead of a fade[/b]
+Doors and map travel inside the same scene (and the whole map is one scene: home, yard, tavern, church, morgue…) don't go through black anymore. You're moved in the same frame: the old view stays on screen for about three frames while the new place is drawn, then it's gone. Doors that lead to another scene still use a quick black.
 
-[b]No fades[/b]
-On doors you use and on map travel, the two 0.3 s fades and the extra 0.3 s pause in black are gone: the new place just appears. Fights and story scenes keep the game's own timing. If you'd like a soft fade back, set [b]FadeSeconds[/b].
+[b]Walk in[/b]
+Walk into a door and you go through just as you reach it. Where the floor ends before the door (the tavern's porch, the top of the barracks stairs) your character keeps walking up to the door, or down a few steps, before the cut. Only your character's drawing moves; your position and your save don't change. During fights, doors only work with the key.
+
+[b]Ready before you arrive[/b]
+The first time in a while that you go through a door, the game loads the pieces of the other side before it lets you move. When you get near a door, Instant Transitions loads its other side ahead of time, out of view and a little each frame, so the cut never waits.
+
+[b]No freeze at every door[/b]
+With the screen black, the game runs a full memory clean-up on every door: it unloads unused assets, collects garbage and searches everything loaded, 24 times over, for editor-only components. That's most of the wait. This mod never does it all at once: every third door removes one of the 24 kinds of editor-only components (about 30 ms), so nothing piles up. Unused assets are unloaded every 10 minutes at a door that goes through black, or when memory grows a lot; loading a save always does the full clean-up.
 
 [b]Fast first visits[/b]
-While a save loads, the game preloads a fixed list of the pieces places are drawn with. Anything not on that list (for example, what you built in your yard) loads from disk the first time you see it, in one frozen frame. Instant Transitions preloads the rest of the map at the end of the loading screen, several at a time, so first visits are nearly as quick as the next ones. A line under the loading bar shows the progress. It uses about 500 MB more memory and is skipped on PCs with less than 7 GB of RAM.
+While a save loads, the game preloads a fixed list of the pieces places are drawn with. Anything not on that list (for example, what you built in your yard) loads from disk the first time you see it, in one frozen frame. Instant Transitions preloads the rest of the map at the end of the loading screen, several at a time. A line under the loading bar shows the progress. It uses about 500 MB more memory and is skipped on PCs with less than 7 GB of RAM.
 
 [center][img]https://staticdelivery.nexusmods.com/mods/10208/images/206/206-1790585949-828152106.gif[/img][/center]
 
-[b]Compare it yourself[/b]
-Press [b]Ctrl + Shift + O[/b] while playing to turn the mod on or off. The change applies from the next door, and a notice shows the new state.
+[size=4][b][color=#ffd966]Keys[/color][/b][/size]
+None of them clash with the game's own keys, and you can change them in the settings:
+[list]
+[*][b]Ctrl + Shift + O[/b]: turns the whole mod on and off, to compare with the unmodded game.
+[*][b]Ctrl + Shift + C[/b]: turns walking into doors on and off. Off, every door works with E and shows its prompt.
+[*][b]Ctrl + Shift + H[/b]: shows or hides the "[E] Enter" prompts over doors.
+[/list]
 
 [size=4][b][color=#ffd966]Beta[/color][/b][/size]
-Doors and loading are measured and tested. Long play sessions are still being tested. If anything feels off, please post [b]BepInEx\LogOutput.log[/b] in the Bugs tab: every door, loading screen and clean-up is written there ([b][Door][/b], [b][Load][/b], [b][Preload][/b] and [b][Clean-up][/b] lines), which makes problems easy to find.
+Doors, map travel and loading are measured and tested, and every door on the map was checked. If anything feels off, please post [b]BepInEx\LogOutput.log[/b] in the Bugs tab and say which door: every door, loading screen and clean-up is written there ([b][Door][/b], [b][Walk-in][/b], [b][Load][/b], [b][Preload][/b], [b][Prewarm][/b] and [b][Clean-up][/b] lines), which makes problems easy to find.
 
 [size=4][b][color=#ffd966]Settings[/color][/b][/size]
 In [b]BepInEx\config\verto13.gk2.instanttransitions.cfg[/b] (created the first time you play), every setting explained inside:
 [list]
-[*][b]Enabled[/b] (true): false = everything as in the unmodded game; the mod only measures doors.
-[*][b]ToggleKey[/b] (Ctrl + Shift + O): turns the mod on and off while playing.
+[*][b]Enabled[/b] (true): false = everything as in the unmodded game; the mod only measures doors. [b]ToggleKey[/b] (Ctrl + Shift + O) switches it while playing.
+[*][b]HardCut[/b] (true): doors and map travel in the same scene cut with no black. false = a quick fade through black.
+[*][b]WalkIntoDoors[/b] (true): walk into doors to go through them. [b]WalkInKey[/b] (Ctrl + Shift + C) switches it while playing.
+[*][b]HideDoorPrompts[/b] (true): hides the "[E] Enter" over doors you can walk into. [b]PromptsKey[/b] (Ctrl + Shift + H) switches it while playing.
 [*][b]FullCleanupEveryMinutes[/b] (10) and [b]FullCleanupWhenMemoryGrowsMB[/b] (300): when a door unloads unused assets (about 0.3 s). Doors never run the game's full clean-up.
-[*][b]FadeSeconds[/b] (0) and [b]BlackPauseSeconds[/b] (0): the game uses 0.3 and 0.3. 0 = no fade.
+[*][b]FadeSeconds[/b] (0) and [b]BlackPauseSeconds[/b] (0): for the doors that still go through black; the game uses 0.3 and 0.3.
 [*][b]PreloadPlaces[/b] (true) and [b]PreloadMaxSeconds[/b] (20): the map preload while a save loads.
 [/list]
 
@@ -50,7 +74,7 @@ In [b]BepInEx\config\verto13.gk2.instanttransitions.cfg[/b] (created the first t
 [*]Download [url=https://github.com/BepInEx/BepInEx/releases/tag/v5.4.23.5]BepInEx 5.4.23.5[/url]: the file [b]BepInEx_win_x64_5.4.23.5.zip[/b].
 [*]In Steam, right-click [b]Graveyard Keeper 2[/b] → [b]Manage[/b] → [b]Browse local files[/b]. That's your game folder.
 [*]Extract BepInEx into that folder, then this mod's zip (choose [b]Replace[/b] if asked). The mod goes in [b]BepInEx/plugins/InstantTransitions/[/b].
-[*]Start the game and load your save: near the end of the loading screen you'll see "Preparing places so doors are quick…" under the bar.
+[*]Start the game and load your save: near the end of the loading screen you'll see "Preparing places so doors are quick…" under the bar. Then walk into any door.
 [/list]
 [b]Uninstall:[/b] delete [b]BepInEx\plugins\InstantTransitions[/b] in your game folder. Your saves are never touched.
 
@@ -59,7 +83,7 @@ In [b]BepInEx\config\verto13.gk2.instanttransitions.cfg[/b] (created the first t
 [*]Doesn't touch your saves or change any balance.
 [*]No network access, no data collection, no game files or assets included.
 [*]Use only [b]one[/b] mod that changes doors or the game's memory clean-up; two of them would fight over the same thing.
-[*]Tested with Graveyard Keeper 2 1.007.1 and BepInEx 5.4.23.5, alongside a dozen other mods. Also loads on older versions of the game (1.004.2 and up).
+[*]Tested with Graveyard Keeper 2 1.007.1 and BepInEx 5.4.23.5, alongside many other mods. Also loads on older versions of the game (1.004.2 and up).
 [/list]
 
 Unofficial mod, not affiliated with Lazy Bear Games. Made with the help of AI (Claude). From the author of [url=https://www.nexusmods.com/graveyardkeeper2/mods/177]Crafting Queue[/url].
