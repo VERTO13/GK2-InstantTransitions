@@ -19,7 +19,7 @@ public sealed class Plugin : BaseUnityPlugin
 {
     public const string Guid = "verto13.gk2.instanttransitions";
     public const string Name = "Instant Transitions";
-    public const string Version = "0.10.0";
+    public const string Version = "0.10.1";
 
     internal static ManualLogSource Log;
     internal static ConfigEntry<bool> Enabled;

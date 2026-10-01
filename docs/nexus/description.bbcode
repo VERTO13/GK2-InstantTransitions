@@ -40,7 +40,7 @@ The first time in a while that you go through a door, the game loads the pieces 
 With the screen black, the game runs a full memory clean-up on every door: it unloads unused assets, collects garbage and searches everything loaded, 24 times over, for editor-only components. That's most of the wait. This mod never does it all at once: every third door removes one of the 24 kinds of editor-only components (about 30 ms), so nothing piles up. Unused assets are unloaded every 10 minutes at a door that goes through black, or when memory grows a lot; loading a save always does the full clean-up.
 
 [b]Fast first visits[/b]
-While a save loads, the game preloads a fixed list of the pieces places are drawn with. Anything not on that list (for example, what you built in your yard) loads from disk the first time you see it, in one frozen frame. Instant Transitions preloads the rest of the map at the end of the loading screen, several at a time. A line under the loading bar shows the progress. It uses about 500 MB more memory and is skipped on PCs with less than 7 GB of RAM.
+While a save loads, the game preloads a fixed list of the pieces places are drawn with. Anything not on that list (for example, what you built in your yard) loads from disk the first time you see it, in one frozen frame. Instant Transitions preloads the rest of the map near the end of the loading screen, several at a time. A line under the loading bar shows the progress. It uses about 500 MB more memory and is skipped on PCs with less than 7 GB of RAM.
 
 [center][img]https://staticdelivery.nexusmods.com/mods/10208/images/206/206-1790585949-828152106.gif[/img][/center]
 
@@ -54,6 +54,16 @@ None of them clash with the game's own keys, and you can change them in the sett
 
 [size=4][b][color=#ffd966]Beta[/color][/b][/size]
 Doors, map travel and loading are measured and tested, and every door on the map was checked. If anything feels off, please post [b]BepInEx\LogOutput.log[/b] in the Bugs tab and say which door: every door, loading screen and clean-up is written there ([b][Door][/b], [b][Walk-in][/b], [b][Load][/b], [b][Preload][/b], [b][Prewarm][/b] and [b][Clean-up][/b] lines), which makes problems easy to find.
+
+[size=4][b][color=#ffd966]Black screen after loading, or Jack missing at his boat?[/color][/b][/size]
+Fixed in 0.10.1. It could happen when all three of these were true:
+[list]
+[*]You [b]loaded[/b] a save. It never happens if you sleep and keep playing.
+[*]That save was made the night before a morning scene, like Jack's first visit about his boat.
+[*]A mod kept the loading screen up a few seconds longer at the very end.
+[/list]
+Why: the game starts that morning scene before the loading screen is gone, and when loading ends it removes every speech bubble. With those extra seconds the scene was already talking, lost its bubble and waited for it forever. This mod's map preload added those seconds (0.9 and 0.10.0); now it runs earlier, before the game starts anything.
+[b]Still happening with 0.10.1?[/b] Then another mod is adding those seconds: any mod that preloads or prepares things at the end of the loading screen can do it. Remove them one at a time, load that save again, and please tell me which one it was.
 
 [size=4][b][color=#ffd966]Settings[/color][/b][/size]
 In [b]BepInEx\config\verto13.gk2.instanttransitions.cfg[/b] (created the first time you play), every setting explained inside:

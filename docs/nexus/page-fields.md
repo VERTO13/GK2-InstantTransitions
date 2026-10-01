@@ -11,7 +11,7 @@ code isn't public. The editor is SCEditor: paste the BBCode in its "View source"
 - **Name:** Instant Transitions
 - **Category:** Utilities
 - **Tags:** Performance Optimization, Quality of Life, AI Assisted
-- **Version:** 0.10.0
+- **Version:** 0.10.1
 - **Language:** English
 
 ## Gallery (in this order)
@@ -58,7 +58,7 @@ Since 0.9.1, one file:
 
 | File | Name on Nexus | Primary | Description |
 |---|---|---|---|
-| `InstantTransitions-0.10.0.zip` | Instant Transitions | yes | Only the mod. Requires BepInEx 5 (installed separately, see the description). Extract into your game folder, next to GraveyardKeeper2.exe, and choose Replace if Windows asks. |
+| `InstantTransitions-0.10.1.zip` | Instant Transitions | yes | Only the mod. Requires BepInEx 5 (installed separately, see the description). Extract into your game folder, next to GraveyardKeeper2.exe, and choose Replace if Windows asks. |
 
 Upload each version with "Update existing file" on "Instant Transitions", so Nexus keeps the history. The 0.9.0
 "Instant Transitions (with BepInEx)" file goes to **Old files** (edit it and change its category), like Crafting
@@ -104,3 +104,8 @@ previous files; changelog in the upload form). Media: "Add image(s)" for the thu
 with pointer events sent from the page (pointerdown on the card's grip, several pointermove, pointerup), then Save. The
 walk-in GIF is https://staticdelivery.nexusmods.com/mods/10208/images/206/206-1790845933-28489691.gif. On saving, the
 editor drops the blank line after each `[/list]` (it did in 0.9.1 too); the page looks the same.
+
+## Changelog 0.10.1
+
+- Fixed: loading a save made the night before a morning scene (like Jack's first visit about his boat) could leave the screen black, and Jack never went to his boat. The map preload now runs before the game starts those scenes.
+- If it still happens with 0.10.1, another mod is keeping the loading screen up longer at the very end. The description says exactly when it happens and why.
