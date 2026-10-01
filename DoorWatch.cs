@@ -197,6 +197,7 @@ internal class DoorWatch : MonoBehaviour
             Plugin.Log.LogDebug("Cut: " + e.Message);
         }
         DoorPrewarm.Tick(); // atrapa lo suyo
+        Settle.Tick();
         try
         {
             WatchLoading();
@@ -419,6 +420,7 @@ internal class DoorWatch : MonoBehaviour
                            $"{Seconds(d.start, end):0.00} s = {parts} · longest frame {d.longestFrame:0.00} s ({d.slowFrames} over 0.1 s) · " +
                            $"GCs {GC.CollectionCount(0) - d.gcBefore} · managed {d.managedBefore} -> {ManagedMB()} MB · Unity {d.unityBefore} -> {UnityMB()} MB · " +
                            $"game process {d.processBefore} -> {ProcessMB()} MB");
+        Settle.Start($"{d.fromZone ?? "?"} -> {toZone ?? "?"} (through black)");
     }
 
     // Opacidad de la cortina negra del juego (0 = se ve el juego, 1 = negro). La cortina se toma de la lista de

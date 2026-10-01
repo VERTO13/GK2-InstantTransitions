@@ -112,6 +112,7 @@ internal static class Cut
                                $"{(cameraLate ? "; the camera still wasn't on you after 0.4 s" : "")}), then cut · " +
                                $"managed {DoorWatch.ManagedMB()} MB · Unity {DoorWatch.UnityMB()} MB · " +
                                $"game process {DoorWatch.ProcessMB()} MB");
+            Settle.Start($"{fromZone ?? "?"} -> {MainGame.PlayerData?.CurrentWorldZoneData?.id ?? "?"} (cut)");
         }
         catch (Exception e)
         {
