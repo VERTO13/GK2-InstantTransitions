@@ -41,7 +41,7 @@ internal class DoorWatch : MonoBehaviour
     private UILoadingOverlay overlay;   // la pantalla de carga: se cronometra cada vez que se muestra
     private float nextOverlayLookup;
     private long loadStart, saveAt, sceneAt;
-    internal static long LoadCleanupAt, LoadPreloadDoneAt; // los ponen la limpieza de carga y la precarga
+    internal static long LoadCleanupAt, LoadPreloadStartAt, LoadPreloadDoneAt; // los ponen la limpieza de carga y la precarga
     private CanvasGroup curtain;
     private float nextLookup;
     private string lastError;
@@ -328,7 +328,7 @@ internal class DoorWatch : MonoBehaviour
         if (shown && loadStart == 0)
         {
             loadStart = Now();
-            saveAt = sceneAt = LoadCleanupAt = LoadPreloadDoneAt = 0;
+            saveAt = sceneAt = LoadCleanupAt = LoadPreloadStartAt = LoadPreloadDoneAt = 0;
             Preload.LastSeconds = 0;
         }
         if (shown)
@@ -363,9 +363,10 @@ internal class DoorWatch : MonoBehaviour
         }
         Phase("save data", saveAt);
         Phase("map", sceneAt);
+        Phase("the map's start-up", LoadPreloadStartAt);
+        Phase("preload", LoadPreloadDoneAt);
         Phase("game's after-load work", LoadCleanupAt);
-        Phase("clean-up + preload", LoadPreloadDoneAt);
-        Phase("last frames", end);
+        Phase("clean-up and last frames", end);
         return parts.Count > 0 ? string.Join(", ", parts) + " s" : "no phases seen";
     }
 

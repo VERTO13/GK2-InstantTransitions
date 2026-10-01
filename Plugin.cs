@@ -95,6 +95,7 @@ public sealed class Plugin : BaseUnityPlugin
         StartPart("the memory clean-up on doors", () => Cleanup.Apply(harmony));
         StartPart("the quick fades", () => QuickDoors.Apply(harmony));
         StartPart("hiding the door prompts", () => DoorPrompts.Apply(harmony));
+        StartPart("the map preload while a save loads", () => Preload.Apply(harmony));
         StartPart("the door log, loading line and preload", () => gameObject.AddComponent<DoorWatch>());
     }
 

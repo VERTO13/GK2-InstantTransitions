@@ -16,19 +16,111 @@ namespace InstantTransitions;
 // fija de sus desarrolladores (MainGame.RegisterBackgroundPreloadTasks → *.InitAsync). Lo que no está en esa lista
 // se carga del disco la primera vez que lo ves, todo en un cuadro: medido, hasta 1.3 s al entrar al patio.
 //
-// Aquí, al final de la carga de la partida (dentro de la limpieza que el juego hace justo antes de quitar la pantalla
-// de carga, así la pantalla espera), se revisan TODAS las piezas del mapa donde estás (las mismas que el juego
+// Aquí, con el mapa ya cargado y ANTES de que el juego haga su trabajo de después de cargar (MainGame.AfterSceneHasLoaded,
+// así la pantalla de carga espera), se revisan TODAS las piezas del mapa donde estás (las mismas que el juego
 // registra en GameScene.CollectScenePoolPaths) y se cargan las que falten con las funciones asíncronas del propio
 // juego (WgoPartPool.LoadPrefab, *.CreatePoolByIdAsync), hasta 32 a la vez: cargadas una por una tardaban 15 s
 // en una partida a medias (836 piezas), cada una esperando al disco. A cada reserva le queda una copia, como en la
 // precarga del juego. El trabajo de cada cuadro se limita para que la pantalla de carga siga animada, un texto bajo
 // la barra dice cuánto falta, y nunca pasa de PreloadMaxSeconds. Pase lo que pase, al final la carga sigue.
-// Al terminar se quitan los componentes de editor que traen esas copias (lo que el juego hace en cada puerta) y la
-// memoria de ese momento pasa a ser la referencia de la siguiente limpieza completa.
+// Los componentes de editor que traen esas copias los quita la limpieza de carga, que va justo después.
+//
+// Por qué antes y no dentro de la limpieza (como hasta la 0.10.0): AfterSceneHasLoaded dispara el evento "después de
+// dormir" (GlobalEventsSystem AfterSleep) ANTES de su limpieza, y con él arrancan las escenas de "al despertar" (Jack
+// yéndose al barco, cartas, etc.). El juego cuenta con que la limpieza dura un instante: al terminar la carga,
+// MainGame.OnGameStarted borra todos los globos de diálogo (Bubble.OnGameStarted → UISpeechBubble.ForceRemoveAll) sin
+// avisar a nadie. Con la precarga metida ahí, la escena llevaba varios segundos corriendo detrás de la pantalla de
+// carga, el globo que estuviera puesto se borraba y el guion se quedaba esperándolo para siempre: pantalla en negro
+// al cargar, y Jack nunca llegaba al barco (reportes de Nexus, reproducido el 2026-10-02 con una partida guardada la
+// noche antes de esa escena). Antes de AfterSceneHasLoaded todavía no ha empezado nada: es igual que un disco más lento.
 internal static class Preload
 {
     private const int MaxInFlight = 32;
     private const int FrameBudgetMs = 20;
+
+    private static MethodInfo afterLoad;
+    private static bool passThrough; // la llamada es la nuestra, ya con la precarga hecha: que corra el juego
+
+    public static void Apply(Harmony harmony)
+    {
+        MethodInfo target = AccessTools.Method(typeof(MainGame), "AfterSceneHasLoaded", Type.EmptyTypes);
+        if (target == null || target.IsStatic || target.ReturnType != typeof(UniTask))
+        {
+            Plugin.Log.LogWarning("MainGame.AfterSceneHasLoaded not found (game update?): the map preload is off.");
+            return;
+        }
+        try
+        {
+            // Seguro de parchar: su cuerpo solo crea su máquina de estados (como HiddenOptimization), sin leer estáticos del juego.
+            harmony.Patch(target, prefix: new HarmonyMethod(typeof(Preload), nameof(BeforeAfterLoad)));
+            afterLoad = target;
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.LogWarning("Could not hook the map preload: " + e.Message);
+        }
+    }
+
+    // El mapa ya cargó y el juego va a empezar su trabajo de después: primero la precarga, y luego ese trabajo tal cual.
+    // La tarea que se devuelve SIEMPRE termina (con lo que diga el juego): si no, la pantalla de carga no se quitaría.
+    private static bool BeforeAfterLoad(MainGame __instance, ref UniTask __result)
+    {
+        if (passThrough || afterLoad == null || !Plugin.Enabled.Value || !Plugin.PreloadPlaces.Value)
+            return true;
+        try
+        {
+            var done = new UniTaskCompletionSource();
+            MainGame game = __instance;
+            DoorWatch.LoadPreloadStartAt = Stopwatch.GetTimestamp();
+            LoadingLabel.Show(0, 1);
+            Start(() => Continue(game, done));
+            __result = done.Task;
+            return false;
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.LogWarning("[Preload] off this time: " + e.Message);
+            try { LoadingLabel.Hide(); }
+            catch (Exception ex) { Plugin.Log.LogDebug("Loading label: " + ex.Message); }
+            return true;
+        }
+    }
+
+    private static void Continue(MainGame game, UniTaskCompletionSource done)
+    {
+        UniTask rest;
+        try
+        {
+            passThrough = true;
+            try
+            {
+                rest = (UniTask)afterLoad.Invoke(game, null);
+            }
+            finally
+            {
+                passThrough = false;
+            }
+        }
+        catch (Exception e)
+        {
+            done.TrySetException(e.InnerException ?? e); // lo mismo que habría visto el juego
+            return;
+        }
+        Forward(rest, done).Forget();
+    }
+
+    private static async UniTaskVoid Forward(UniTask rest, UniTaskCompletionSource done)
+    {
+        try
+        {
+            await rest;
+            done.TrySetResult();
+        }
+        catch (Exception e)
+        {
+            done.TrySetException(e);
+        }
+    }
 
     private static readonly FieldInfo WgoPoolInstance = AccessTools.Field(typeof(LazySingleton<WgoPartPool>), "instance");
     private static readonly FieldInfo CtorPoolInstance = AccessTools.Field(typeof(LazySingleton<ConstructorPartPool>), "instance");
@@ -190,20 +282,12 @@ internal static class Preload
                 frames++;
                 yield return null; // que la pantalla de carga siga animada
             }
-            double loadSeconds = total.Elapsed.TotalSeconds;
-            // Los componentes de editor que traen las copias nuevas, fuera ya (el juego lo haría en la siguiente puerta).
-            string strip = "";
-            if (done > 0)
-            {
-                int stripped = Cleanup.StripNow(out double stripMs);
-                strip = $" · then stripped {stripped} editor components in {stripMs / 1000:0.00} s";
-            }
-            Cleanup.ResetBaseline(); // la memoria de ahora es la referencia de la siguiente limpieza completa
+            // Los componentes de editor de las copias nuevas y la referencia de memoria: la limpieza de carga, que va enseguida.
             LastSeconds = total.Elapsed.TotalSeconds;
             DoorWatch.LoadPreloadDoneAt = Stopwatch.GetTimestamp();
-            Plugin.Log.LogInfo($"[Preload] map {scene ?? "?"}: {loadSeconds:0.00} s ({frames} frames, main-thread work {workMs / 1000.0:0.00} s)" +
+            Plugin.Log.LogInfo($"[Preload] map {scene ?? "?"}: {LastSeconds:0.00} s ({frames} frames, main-thread work {workMs / 1000.0:0.00} s)" +
                                (stopped ? $" (stopped at the {Plugin.PreloadMaxSeconds.Value:0} s limit)" : "") +
-                               $" · objects {counts[Kind.Object]} · building parts {counts[Kind.ConstructorPart]} · scenery {counts[Kind.Baked]}{strip}" +
+                               $" · objects {counts[Kind.Object]} · building parts {counts[Kind.ConstructorPart]} · scenery {counts[Kind.Baked]}" +
                                $" · memory {memoryBefore} -> {Cleanup.MemoryMB()} MB · game process {processBefore} -> {DoorWatch.ProcessMB()} MB");
         }
         finally

@@ -163,9 +163,8 @@ internal static class Cleanup
         {
             // Algo inesperado: la limpieza del propio juego, para que ni la puerta ni la carga se queden esperando. Solo
             // puede llegar aquí antes de que empiece nada de lo nuestro, porque Timed atrapa cada paso que hace algo: así
-            // nunca se limpia dos veces. Todo paso nuevo en Timed, StartPreload o Preload.Start necesita su propio catch.
+            // nunca se limpia dos veces. Todo paso nuevo en Timed necesita su propio catch.
             Plugin.Log.LogWarning("Clean-up: " + e.Message + " (the game's own clean-up runs instead)");
-            HideLabel();
             return true;
         }
     }
@@ -200,26 +199,16 @@ internal static class Cleanup
         }
     }
 
-    // Aquí dentro para que ni una clase rota por una actualización del juego pueda escapar de un catch.
-    private static void HideLabel()
-    {
-        try { LoadingLabel.Hide(); }
-        catch (Exception e) { Plugin.Log.LogDebug("Loading label: " + e.Message); }
-    }
-
     private static double Ms(long from, long to) => (to - from) * 1000.0 / Stopwatch.Frequency;
 
     private static UniTask Timed(Run run)
     {
         var done = new UniTaskCompletionSource();
-        Action complete = () => done.TrySetResult();
-        // Al cargar una partida, después de la limpieza va la precarga de las piezas del mapa (la carga la espera).
-        bool preload = run.why == Loading && Plugin.PreloadPlaces.Value;
-        Action after = preload ? () => StartPreload(complete) : complete;
+        // Al cargar una partida aquí NO se puede alargar nada: el juego ya disparó "después de dormir" y sus escenas ya
+        // corren (ver Preload). La precarga del mapa va antes, en Preload.BeforeAfterLoad.
+        Action after = () => done.TrySetResult();
         if (run.why == Loading)
             DoorWatch.LoadCleanupAt = Stopwatch.GetTimestamp(); // para el desglose de la pantalla de carga
-        if (preload)
-            LoadingLabel.Show(0, 1); // desde ya: la barra del juego ya está llena y la limpieza tarda casi 1 s
         long t0 = Stopwatch.GetTimestamp();
         Action<Run, long> finish = run.unloadOnly ? FinishUnload : Finish;
         if (!run.full && !run.unloadOnly)
@@ -280,21 +269,6 @@ internal static class Cleanup
         return done.Task;
     }
 
-    private static void StartPreload(Action complete)
-    {
-        try
-        {
-            Preload.Start(complete);
-        }
-        catch (Exception e)
-        {
-            // Preload.Start atrapa lo suyo; esto solo pasa si la precarga ni siquiera se pudo cargar (otra versión del juego).
-            Plugin.Log.LogWarning("[Preload] off: " + (e.InnerException ?? e).Message);
-            HideLabel();
-            complete();
-        }
-    }
-
     private static void GcOnly(Run run, long t0)
     {
         try { GC.Collect(); }
@@ -338,19 +312,8 @@ internal static class Cleanup
         DoorWatch.CleanupFinished(run);
     }
 
-    // Para la precarga: quitar ya los componentes de editor de lo recién cargado (cronometrado).
-    internal static int StripNow(out double ms)
-    {
-        long t = Stopwatch.GetTimestamp();
-        int stripped;
-        try { stripped = Strip(); }
-        catch (Exception e) { Plugin.Log.LogWarning("[Preload] strip: " + e.Message); stripped = -1; }
-        ms = Ms(t, Stopwatch.GetTimestamp());
-        return stripped;
-    }
-
-    // Después de la limpieza y la precarga de una carga de partida: lo que la precarga dejó en memoria es a propósito,
-    // así que esa memoria es la referencia (si no, la siguiente puerta la tomaba como crecimiento y limpiaba todo).
+    // Al prender el mod jugando: la memoria de ahora es la referencia (apagado, el juego limpió en cada puerta; si no, la
+    // siguiente puerta la tomaba como crecimiento y liberaba todo).
     internal static void ResetBaseline()
     {
         anyFull = true;
