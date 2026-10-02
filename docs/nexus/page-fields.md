@@ -31,14 +31,15 @@ Mod requirements (legacy), external resource (the same as Crafting Queue since i
 - **Link:** https://github.com/BepInEx/BepInEx/releases/tag/v5.4.23.5
 - **Notes:** The mod loader. Download BepInEx_win_x64_5.4.23.5.zip and extract it into your game folder first. Skip it if you already have BepInEx 5.
 
-Until 0.9.0 the notes said it came in the "with BepInEx" file; since 0.9.1 BepInEx isn't bundled (OrionAF asked for it,
-and Crafting Queue did the same).
+Until 0.9.0 the notes said it came in the "with BepInEx" file; since 0.9.1 BepInEx isn't bundled (a player asked for
+it, and Crafting Queue did the same).
 
 ## Permissions and credits
 
-Closed for now (decided 2026-09-28): the code isn't on GitHub yet. Nexus's "Use recommended settings": re-upload
+Closed on Nexus (decided 2026-09-28, while the code wasn't on GitHub). Nexus's "Use recommended settings": re-upload
 and conversion not allowed; modification and asset use, ask the author; donation points and monetisation for others,
-not allowed. When the code goes public, switch to the MIT text Crafting Queue uses and link the repo.
+not allowed. The code is public since 2026-10-02 (https://github.com/VERTO13/GK2-InstantTransitions, MIT); switching
+the Nexus page to the MIT text Crafting Queue uses, and linking the repo there, is the author's call and isn't done yet.
 
 - **Third-party content:** Yes (I have permission). Only BepInEx, inside the "with BepInEx" 0.9.0 file (now in Old
   files, still downloadable, so this stays); its LGPL-2.1 license allows bundling it unmodified.
