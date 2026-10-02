@@ -2,7 +2,7 @@
 
 **English** | [Español](README.es.md)
 
-Every door in Graveyard Keeper 2 freezes the game with the screen black for 1 to 2 seconds, and longer the more mods you have. With **Instant Transitions** the whole map feels like one place: you **walk into** a door and, in the same instant, you're on the other side, still walking. No black screen, no freeze, no "[E] Enter".
+Every door in Graveyard Keeper 2 takes you through a black screen: about a second since game version 1.008, and 1 to 2 seconds before it. With **Instant Transitions** the whole map feels like one place: you **walk into** a door and, in the same instant, you're on the other side, still walking. No black screen, no freeze, no "[E] Enter".
 
 > ⚠️ **Beta (0.10.1).** Doors, map travel and loading are measured and tested, and every door on the map was checked. If anything feels off, please [report it](#reporting-bugs) with your log. It really helps.
 
@@ -12,10 +12,10 @@ Every door in Graveyard Keeper 2 freezes the game with the screen black for 1 to
 
 ## What it does
 
-| | Without mods | With Instant Transitions |
+| | Without the mod | With Instant Transitions |
 |---|---|---|
-| A door (home ↔ yard) | 1.4–1.9 s of black (up to 2.6 s with many mods) | **~0.05 s, no black** |
-| Map travel | ~1.8 s of black | **~0.05 s, no black** |
+| A door (home ↔ yard) | about 0.9 s through black (1.4–1.9 s before game version 1.008) | **~0.1 s, no black** |
+| Map travel | 0.9–1.4 s through black (~1.8 s before game version 1.008) | **0.1–0.3 s, no black** |
 | First visit to a place | +0.3–1.3 s while it loads | **the same as any other visit** |
 | Loading a save | as usual | about 5 s longer, with a progress line |
 
@@ -27,7 +27,7 @@ Every door in Graveyard Keeper 2 freezes the game with the screen black for 1 to
 
 **Ready before you arrive.** The first time in a while that you go through a door, the game loads the pieces of the other side before it lets you move, and the cut would wait for it. When you get near a door, Instant Transitions loads its other side ahead of time, out of view and a little each frame, so the cut never waits.
 
-**No freeze at every door.** With the screen black, the game runs a full memory clean-up on every door: it unloads unused assets, collects garbage and searches everything loaded, 24 times over, for editor-only components. That's most of the wait. This mod never does it all at once: every third door removes one of the 24 kinds of editor-only components (about 30 ms), so nothing piles up. Unused assets are unloaded every 10 minutes at a door that goes through black, or when memory grows a lot; loading a save always does the full clean-up.
+**No freeze at doors.** Before version 1.008, the game ran a full memory clean-up on every door, with the screen black: it unloaded unused assets, collected garbage and searched everything loaded, 24 times over, for editor-only components. That was most of the wait. Since 1.008 the game only does it when a door leads to another scene. This mod never does it all at once at a door: every third door removes one of the 24 kinds of editor-only components (about 30 ms), so nothing piles up, and unused assets are unloaded at a door only now and then: when memory has grown a lot, or every 10 minutes at a door that leads to another scene. Loading a save always does the full clean-up.
 
 **Fast first visits.** While a save loads, the game preloads a fixed list of the pieces places are drawn with. Anything not on that list (for example, what you built in your yard) loads from disk the first time you see it, in one frozen frame. Instant Transitions preloads the rest of the map near the end of the loading screen, several at a time. A line under the loading bar shows the progress. This uses about 500 MB more memory and is skipped on PCs with less than 7 GB of RAM.
 
@@ -106,7 +106,7 @@ Settings live in `BepInEx\config\verto13.gk2.instanttransitions.cfg` (created th
 - It doesn't touch your saves or change any balance. Turn it off (or uninstall it) at any time.
 - Use only **one** mod that changes doors or the game's memory clean-up; two of them would fight over the same thing.
 - **Black screen after loading, or Jack missing at his boat?** Since 0.10.1 this mod no longer causes it, but another mod still can. It happens when you load a save made the night before a morning scene (like Jack's first visit) and a mod keeps the loading screen up a few seconds longer at the very end: the game starts that scene before the loading screen is gone and then removes its speech bubble, so the scene waits forever. This mod's preload used to do that; now it runs earlier.
-- Tested with Graveyard Keeper 2 1.007.1 and BepInEx 5.4.23.5, alongside many other mods. It also loads on older versions of the game (1.004.2 and up): anything the game doesn't have yet turns itself off, with a line in the log.
+- Tested with Graveyard Keeper 2 1.008 and BepInEx 5.4.23.5, alongside many other mods. It also loads on older versions of the game (1.004.2 and up): anything the game doesn't have yet turns itself off, with a line in the log.
 
 What each version changed: [release notes](CHANGELOG.md).
 

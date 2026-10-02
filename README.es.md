@@ -2,7 +2,7 @@
 
 [English](README.md) | **Español**
 
-Cada puerta de Graveyard Keeper 2 congela el juego con la pantalla en negro entre 1 y 2 segundos, y más mientras más mods tengas. Con **Instant Transitions** todo el mapa se siente como un solo lugar: **caminas hacia** una puerta y, en el mismo instante, estás del otro lado, todavía caminando. Sin pantalla negra, sin congelón, sin "[E] Entrar".
+Cada puerta de Graveyard Keeper 2 te pasa por una pantalla negra: cerca de un segundo desde la versión 1.008 del juego, y entre 1 y 2 segundos antes. Con **Instant Transitions** todo el mapa se siente como un solo lugar: **caminas hacia** una puerta y, en el mismo instante, estás del otro lado, todavía caminando. Sin pantalla negra, sin congelón, sin "[E] Entrar".
 
 > ⚠️ **Beta (0.10.1).** Las puertas, los viajes por el mapa y la carga están medidos y probados, y se revisaron todas las puertas del mapa. Si algo se siente raro, [repórtalo](#reportar-errores) con tu registro. Ayuda muchísimo.
 
@@ -12,10 +12,10 @@ Cada puerta de Graveyard Keeper 2 congela el juego con la pantalla en negro entr
 
 ## Qué hace
 
-| | Sin mods | Con Instant Transitions |
+| | Sin el mod | Con Instant Transitions |
 |---|---|---|
-| Una puerta (casa ↔ patio) | 1.4–1.9 s en negro (hasta 2.6 s con muchos mods) | **~0.05 s, sin negro** |
-| Viajar por el mapa | ~1.8 s en negro | **~0.05 s, sin negro** |
+| Una puerta (casa ↔ patio) | unos 0.9 s pasando por negro (1.4–1.9 s antes de la versión 1.008 del juego) | **~0.1 s, sin negro** |
+| Viajar por el mapa | 0.9–1.4 s pasando por negro (~1.8 s antes de la versión 1.008 del juego) | **0.1–0.3 s, sin negro** |
 | Primera visita a un lugar | +0.3–1.3 s mientras carga | **igual que cualquier otra visita** |
 | Cargar una partida | lo normal | unos 5 s más, con una línea de avance |
 
@@ -27,7 +27,7 @@ Cada puerta de Graveyard Keeper 2 congela el juego con la pantalla en negro entr
 
 **Listo antes de llegar.** La primera vez en un rato que cruzas una puerta, el juego carga las piezas del otro lado antes de dejarte mover, y el corte tendría que esperarlo. Al acercarte a una puerta, Instant Transitions carga su otro lado por adelantado, fuera de cámara y un poco en cada cuadro, para que el corte nunca espere.
 
-**Sin congelón en cada puerta.** Con la pantalla en negro, el juego hace una limpieza completa de memoria en cada puerta: libera recursos sin usar, recoge basura y busca 24 veces, por todo lo cargado, componentes que solo sirven en el editor. Eso es casi toda la espera. Este mod nunca la hace toda de golpe: cada tercera puerta quita uno de los 24 tipos de componentes de editor (unos 30 ms), así que nada se acumula. Los recursos sin usar se liberan cada 10 minutos en una puerta que pasa por negro, o cuando la memoria crece mucho; al cargar partida siempre se hace la limpieza completa.
+**Sin congelón en las puertas.** Antes de la versión 1.008, el juego hacía una limpieza completa de memoria en cada puerta, con la pantalla en negro: liberaba recursos sin usar, recogía basura y buscaba 24 veces, por todo lo cargado, componentes que solo sirven en el editor. Eso era casi toda la espera. Desde la 1.008 el juego solo la hace cuando una puerta lleva a otra escena. Este mod nunca la hace toda de golpe en una puerta: cada tercera puerta quita uno de los 24 tipos de componentes de editor (unos 30 ms), así que nada se acumula, y los recursos sin usar se liberan en una puerta solo de vez en cuando: si la memoria creció mucho, o cada 10 minutos en una puerta que lleva a otra escena. Al cargar partida siempre se hace la limpieza completa.
 
 **Primeras visitas rápidas.** Mientras carga una partida, el juego precarga una lista fija de las piezas con las que se dibujan los lugares. Lo que no está en esa lista (por ejemplo, lo que construiste en tu patio) se carga del disco la primera vez que lo ves, en un cuadro congelado. Instant Transitions precarga el resto del mapa casi al final de la pantalla de carga, varias piezas a la vez. Una línea bajo la barra de carga muestra el avance. Usa unos 500 MB más de memoria y se omite en PCs con menos de 7 GB de RAM.
 
@@ -106,7 +106,7 @@ Los ajustes están en `BepInEx\config\verto13.gk2.instanttransitions.cfg` (se cr
 - No toca tus partidas ni cambia el balance. Puedes apagarlo (o quitarlo) cuando quieras.
 - Usa **un solo** mod que cambie las puertas o la limpieza de memoria del juego; dos se pelearían por lo mismo.
 - **¿Pantalla en negro al cargar, o Jack no está en su barco?** Desde la 0.10.1 este mod ya no lo provoca, pero otro mod todavía puede. Pasa al cargar una partida guardada la noche antes de una escena de la mañana (como la primera visita de Jack) si un mod alarga unos segundos el final de la pantalla de carga: el juego arranca esa escena antes de quitar la pantalla de carga y luego le borra su globo de diálogo, así que la escena se queda esperando. La precarga de este mod lo hacía; ahora va antes.
-- Probado con Graveyard Keeper 2 1.007.1 y BepInEx 5.4.23.5, junto con muchos otros mods. También carga en versiones anteriores del juego (desde la 1.004.2): lo que el juego todavía no tiene se apaga solo, con una línea en el registro.
+- Probado con Graveyard Keeper 2 1.008 y BepInEx 5.4.23.5, junto con muchos otros mods. También carga en versiones anteriores del juego (desde la 1.004.2): lo que el juego todavía no tiene se apaga solo, con una línea en el registro.
 
 Qué cambió cada versión: [notas de versión](CHANGELOG.md) (en inglés).
 

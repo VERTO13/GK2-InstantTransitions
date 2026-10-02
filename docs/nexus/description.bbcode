@@ -1,10 +1,10 @@
 [center][size=5][b][color=#ffd966]Instant Transitions[/color][/b][/size]
 [size=3]Walk into a door and you're on the other side in the same instant. No black screen, no freeze.[/size][/center]
 
-Every door in Graveyard Keeper 2 freezes the game with the screen black for 1 to 2 seconds, and longer the more mods you have. With Instant Transitions the whole map feels like one place: you [b]walk into[/b] a door and, in the same instant, you're on the other side, still walking.
+Every door in Graveyard Keeper 2 takes you through a black screen: about a second since game version 1.008, and 1 to 2 seconds before it. With Instant Transitions the whole map feels like one place: you [b]walk into[/b] a door and, in the same instant, you're on the other side, still walking.
 
 [center][img]https://staticdelivery.nexusmods.com/mods/10208/images/206/206-1790845933-28489691.gif[/img]
-[i]Without mods, then with Instant Transitions 0.10.[/i][/center]
+[i]Without mods (recorded before game version 1.008, when its doors took longer), then with Instant Transitions 0.10.[/i][/center]
 
 [size=4][b][color=#ffd966]New in 0.10[/color][/b][/size]
 [list]
@@ -19,8 +19,8 @@ Every door in Graveyard Keeper 2 freezes the game with the screen black for 1 to
 
 [size=4][b][color=#ffd966]Measured[/color][/b][/size]
 [list]
-[*][b]A door[/b] (home ↔ yard): 1.4–1.9 s of black without mods, up to 2.6 s with many mods → [color=#9be07a][b]~0.05 s, no black[/b][/color]
-[*][b]Map travel:[/b] ~1.8 s of black → [color=#9be07a][b]~0.05 s, no black[/b][/color]
+[*][b]A door[/b] (home ↔ yard): about 0.9 s through black without the mod (1.4–1.9 s before game version 1.008) → [color=#9be07a][b]~0.1 s, no black[/b][/color]
+[*][b]Map travel:[/b] 0.9–1.4 s through black without the mod (~1.8 s before game version 1.008) → [color=#9be07a][b]0.1–0.3 s, no black[/b][/color]
 [*][b]First visit to a place:[/b] an extra 0.3–1.3 s while it loads → [color=#9be07a][b]the same as any other visit[/b][/color]
 [*][b]Loading a save:[/b] about 5 s longer, with a progress line (see below)
 [/list]
@@ -36,8 +36,8 @@ Walk into a door and you go through just as you reach it. Where the floor ends b
 [b]Ready before you arrive[/b]
 The first time in a while that you go through a door, the game loads the pieces of the other side before it lets you move. When you get near a door, Instant Transitions loads its other side ahead of time, out of view and a little each frame, so the cut never waits.
 
-[b]No freeze at every door[/b]
-With the screen black, the game runs a full memory clean-up on every door: it unloads unused assets, collects garbage and searches everything loaded, 24 times over, for editor-only components. That's most of the wait. This mod never does it all at once: every third door removes one of the 24 kinds of editor-only components (about 30 ms), so nothing piles up. Unused assets are unloaded every 10 minutes at a door that goes through black, or when memory grows a lot; loading a save always does the full clean-up.
+[b]No freeze at doors[/b]
+Before version 1.008, the game ran a full memory clean-up on every door, with the screen black: it unloaded unused assets, collected garbage and searched everything loaded, 24 times over, for editor-only components. That was most of the wait. Since 1.008 the game only does it when a door leads to another scene. This mod never does it all at once at a door: every third door removes one of the 24 kinds of editor-only components (about 30 ms), so nothing piles up, and unused assets are unloaded at a door only now and then: when memory has grown a lot, or every 10 minutes at a door that leads to another scene. Loading a save always does the full clean-up.
 
 [b]Fast first visits[/b]
 While a save loads, the game preloads a fixed list of the pieces places are drawn with. Anything not on that list (for example, what you built in your yard) loads from disk the first time you see it, in one frozen frame. Instant Transitions preloads the rest of the map near the end of the loading screen, several at a time. A line under the loading bar shows the progress. It uses about 500 MB more memory and is skipped on PCs with less than 7 GB of RAM.
@@ -93,7 +93,7 @@ In [b]BepInEx\config\verto13.gk2.instanttransitions.cfg[/b] (created the first t
 [*]Doesn't touch your saves or change any balance.
 [*]No network access, no data collection, no game files or assets included.
 [*]Use only [b]one[/b] mod that changes doors or the game's memory clean-up; two of them would fight over the same thing.
-[*]Tested with Graveyard Keeper 2 1.007.1 and BepInEx 5.4.23.5, alongside many other mods. Also loads on older versions of the game (1.004.2 and up).
+[*]Tested with Graveyard Keeper 2 1.008 and BepInEx 5.4.23.5, alongside many other mods. Also loads on older versions of the game (1.004.2 and up).
 [/list]
 
 [size=4][b][color=#ffd966]Release notes[/color][/b][/size]

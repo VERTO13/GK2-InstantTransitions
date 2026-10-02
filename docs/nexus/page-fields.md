@@ -128,3 +128,20 @@ can still cause the same thing ("since 0.10.1 this mod no longer causes it"). Th
 **Release notes** section at the end (the same text as `CHANGELOG.md`): add each new version on top. The changelog of
 a file that is already uploaded is edited in the Files step: the row's ⋮ → "Edit changelog" (the menu opens with
 pointer events, not with a plain click).
+
+## Game 1.008 (2026-10-02): texts only
+
+No new version and no media. The game stopped running its full memory clean-up at doors inside the same scene: it now
+only does it when a door leads to another scene, and when a save loads. Its own doors went from 1.4–1.9 s to about a
+second. Measured on 1.008 with the test probe (`doors=8` and `mapTravel=4`, with the mod and without it): a door takes
+0.92–1.09 s through black without the mod and about 0.1 s with it; map travel takes 0.90–1.37 s without and
+0.07–0.33 s with. 0.10.1 works on 1.008 as it is.
+
+The description and both READMEs say so now: the intro, the caption of the comparison GIF (it was recorded before
+1.008 and stays), the two first lines of "Measured", "No freeze at doors" and "Tested with 1.008".
+
+A saving trap found that day: **every save removes one line break right after each `[/list]`.** Pasting the repo's
+text, which has a blank line there, gives the usual result. Editing the text that is already on the page and saving
+it again eats one more each time, until the lists touch the next heading. To change a sentence in place, put one line
+break back after every `[/list]` before saving (`text.replace(/\[\/list\]/g, '[/list]\n')`): the saved text is then
+the same as before, except for that sentence.
