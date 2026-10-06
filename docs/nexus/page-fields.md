@@ -166,3 +166,22 @@ the new setting. The file is `InstantTransitions-0.10.2.zip` ("Update existing f
 Reply to that comment:
 
 > Thank you for telling me! You found a real bug and I could reproduce it. With the map preload on, the game could hide that gate again right after opening it, so it showed up closed (and blocked you) while your save said it was open. Since 0.10.2 the mod shows it again and sends its "open" order again. If yours is closed, update and load your save again. If you can't update yet: in BepInEx\config\verto13.gk2.instanttransitions.cfg, under [Loading], set PreloadPlaces = false, and load the save again.
+
+**0.10.2 published 2026-10-05** (zip `dist/InstantTransitions-0.10.2.zip`, DLL `62509efddfc3`; GitHub release `v0.10.2` the same
+day). Done with the author's Brave through the Claude extension, again with the window hidden. What worked:
+- Files step (`/games/graveyardkeeper2/mods/206/edit/files`; with `/games/` in front, without it the page redirects to
+  the public one): the row's "Update" button opens nothing you can see (it asks for a native file picker). Take the
+  page's second file input (the "version management" one, found with the extension's `find` for "file input") and
+  upload the zip there. The card that appears has "Update existing file" already chosen; the version is read from the
+  file name (0.10.2). Left "Archive existing file" off and turned on "Update mod version to match this file's version".
+  "Add changelog" opens `#file-changelog-text` (set with the native value setter plus an `input` event), then "Save file":
+  the row says 0.10.2 and 0.10.1 moves to the old files. The page's own Save stays disabled.
+- Description: from the edit page, `fetch` of the raw GitHub file works (CORS allows it), so the whole new text goes in
+  without pasting it through the tool: SCEditor `sourceMode(true)`, `val(text)`, then the React `onChange(text)`; Save turns
+  on. Compared first: the saved text equals the previous repo version once the line breaks after `[/list]` are ignored,
+  and after saving it equals the new one the same way.
+- The public page (request without the session) shows "Version 0.10.2" and the new release notes.
+- The reply to the comment (Posts tab): "Reply" opens a WysiBB editor. `jQuery(textarea).bbcode(text)` does nothing; focus
+  its `.wysibb-text-editor` and `document.execCommand('insertText', false, text)` plus a `keyup` fills both the editor and
+  the textarea; then the card's `a.submit-comment`. The reply is the one in "Reply to that comment" above (with "0.10.2 is
+  up now" in place of the workaround).

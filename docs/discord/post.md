@@ -47,6 +47,8 @@ Download: https://www.nexusmods.com/graveyardkeeper2/mods/206
 
 ## Update 0.10.2 (reply in the same thread)
 
+Posted by the extension on 2026-10-05 as a new message in the thread. What worked in Discord web with the window hidden: the composer is the `[role=textbox]` whose aria-label starts with "Enviar un mensaje en" (the first Slate editor on the page is the server search box, not it); a synthetic `paste` event with the text in a `DataTransfer` fills it keeping the line breaks, and a dispatched Enter (keydown, keypress, keyup) sends it.
+
 ```
 Instant Transitions 0.10.2 is out:
 
