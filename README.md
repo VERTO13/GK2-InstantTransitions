@@ -4,7 +4,7 @@
 
 Every door in Graveyard Keeper 2 takes you through a black screen: about a second since game version 1.008, and 1 to 2 seconds before it. With **Instant Transitions** the whole map feels like one place: you **walk into** a door and, in the same instant, you're on the other side, still walking. No black screen, no freeze, no "[E] Enter".
 
-> ⚠️ **Beta (0.10.1).** Doors, map travel and loading are measured and tested, and every door on the map was checked. If anything feels off, please [report it](#reporting-bugs) with your log. It really helps.
+> ⚠️ **Beta (0.10.2).** Doors, map travel and loading are measured and tested, and every door on the map was checked. If anything feels off, please [report it](#reporting-bugs) with your log. It really helps.
 
 ![Walking through doors: without mods, then with Instant Transitions](docs/images/walk-in.gif)
 
@@ -27,7 +27,7 @@ Every door in Graveyard Keeper 2 takes you through a black screen: about a secon
 
 **Ready before you arrive.** The first time in a while that you go through a door, the game loads the pieces of the other side before it lets you move, and the cut would wait for it. When you get near a door, Instant Transitions loads its other side ahead of time, out of view and a little each frame, so the cut never waits.
 
-**No freeze at doors.** Before version 1.008, the game ran a full memory clean-up on every door, with the screen black: it unloaded unused assets, collected garbage and searched everything loaded, 24 times over, for editor-only components. That was most of the wait. Since 1.008 the game only does it when a door leads to another scene. This mod never does it all at once at a door: every third door removes one of the 24 kinds of editor-only components (about 30 ms), so nothing piles up, and unused assets are unloaded at a door only now and then: when memory has grown a lot, or every 10 minutes at a door that leads to another scene. Loading a save always does the full clean-up.
+**No freeze at doors.** Before version 1.008, the game ran a full memory clean-up on every door, with the screen black: it unloaded unused assets, collected garbage and searched everything loaded, 24 times over, for editor-only components. That was most of the wait. Since 1.008 the game only does it when a door leads to another scene. This mod never does it all at once at a door: every third door removes one of the 24 kinds of editor-only components (about 30 ms), so nothing piles up. Unloading unused assets (1 to 3 seconds in a long game) is only done under a black screen: when you go to sleep, at a door that goes through black, or while a save loads. Doors and map travel stay instant: only if you go a long time without any of those, memory has grown a lot and your PC is really running short of it, one door goes through black once and does it there. Loading a save always does the full clean-up.
 
 **Fast first visits.** While a save loads, the game preloads a fixed list of the pieces places are drawn with. Anything not on that list (for example, what you built in your yard) loads from disk the first time you see it, in one frozen frame. Instant Transitions preloads the rest of the map near the end of the loading screen, several at a time. A line under the loading bar shows the progress. This uses about 500 MB more memory and is skipped on PCs with less than 7 GB of RAM.
 
@@ -94,8 +94,10 @@ Settings live in `BepInEx\config\verto13.gk2.instanttransitions.cfg` (created th
 | `WalkInKey` | `Ctrl + Shift + C` | Turns walking into doors on and off while playing. |
 | `HideDoorPrompts` | `true` | Hides the "[E] Enter" prompt over doors you can walk into. |
 | `PromptsKey` | `Ctrl + Shift + H` | Shows or hides those prompts while playing. |
-| `FullCleanupEveryMinutes` | `10` | How often a door through black unloads unused assets (about 0.3 s). Doors never run the game's full clean-up. |
-| `FullCleanupWhenMemoryGrowsMB` | `300` | Or sooner, once memory has grown this much. Doors with the cut only do it at twice this. |
+| `FullCleanupEveryMinutes` | `10` | How often unused assets are unloaded (1 to 3 s in a long game), at the next black screen: when you sleep, at a door through black, or while a save loads. Doors never run the game's full clean-up. |
+| `FullCleanupWhenMemoryGrowsMB` | `300` | Or sooner, once memory has grown this much. |
+| `FullCleanupAtAnyDoorWhenMemoryGrowsMB` | `1200` | Last resort. If none of those black screens comes, memory has grown this much and your PC is running short of it (next setting, or under 1.5 GB of RAM free), the next door goes through black once so the unload can happen under it. |
+| `FullCleanupAtAnyDoorWhenGameUsesPercentOfRam` | `60` | The game counts as using a lot of memory when it holds this percentage of your PC's RAM. On a PC with plenty of RAM that never happens, and doors stay instant. |
 | `FadeSeconds` | `0` | Length of each fade on the doors that still go through black. `0` = no fade (the game: 0.3). |
 | `BlackPauseSeconds` | `0` | Pause in black before you're moved, on those doors (the game: 0.3). |
 | `PreloadPlaces` | `true` | Preload the whole map while a save loads. |

@@ -95,7 +95,7 @@ internal class DoorWatch : MonoBehaviour
                            (Plugin.Enabled.Value
                                ? $"doors {(Plugin.HardCut.Value ? "cut with no black" : "go through black")}" +
                                  $"{(Plugin.WalkIntoDoors.Value ? ", you walk into them" : "")}{(Plugin.HideDoorPrompts.Value ? ", their prompts hidden" : "")}; " +
-                                 $"never the full clean-up (unused assets unloaded every {Plugin.FullEveryMinutes.Value:0.#} min or +{Plugin.FullWhenGrownMB.Value} MB at doors through black); " +
+                                 $"never the full clean-up (unused assets unloaded under a black screen: when you sleep or at a door through black, every {Plugin.FullEveryMinutes.Value:0.#} min or +{Plugin.FullWhenGrownMB.Value} MB); " +
                                  $"fades {Plugin.FadeSeconds.Value:0.##} s, pause in black {Plugin.BlackPauseSeconds.Value:0.##} s. "
                                : "off: doors as in the unmodded game, only measured. ") +
                            $"{Plugin.ToggleKey.Value} turns it on and off, {Plugin.WalkInKey.Value} walking into doors, " +
@@ -143,6 +143,38 @@ internal class DoorWatch : MonoBehaviour
         catch
         {
             noProcessMemory = true; // sin Windows (o sin esa función): no se vuelve a intentar
+        }
+        return -1;
+    }
+
+    // Cuánta memoria física le queda libre a la PC entera (la que queda en el Administrador de tareas, "Disponible"): para
+    // saber si de verdad falta memoria o si el juego solo es grande en una PC con de sobra.
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MemoryStatus
+    {
+        public uint dwLength, dwMemoryLoad;
+        public ulong ullTotalPhys, ullAvailPhys, ullTotalPageFile, ullAvailPageFile, ullTotalVirtual, ullAvailVirtual, ullAvailExtendedVirtual;
+    }
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GlobalMemoryStatusEx(ref MemoryStatus status);
+
+    private static bool noFreeMemory;
+
+    internal static long FreeMB()
+    {
+        if (noFreeMemory)
+            return -1;
+        try
+        {
+            var s = new MemoryStatus { dwLength = (uint)Marshal.SizeOf(typeof(MemoryStatus)) };
+            if (GlobalMemoryStatusEx(ref s))
+                return (long)(s.ullAvailPhys / (1024 * 1024));
+        }
+        catch
+        {
+            noFreeMemory = true;
         }
         return -1;
     }
@@ -198,6 +230,14 @@ internal class DoorWatch : MonoBehaviour
         }
         DoorPrewarm.Tick(); // atrapa lo suyo
         Settle.Tick();
+        try
+        {
+            Cleanup.BlackTick(AnyCurtainBlack());
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.LogDebug("Clean-up under black: " + e.Message);
+        }
         try
         {
             WatchLoading();
@@ -381,7 +421,8 @@ internal class DoorWatch : MonoBehaviour
             d.cleanupEnd = Now();
             return;
         }
-        Plugin.Log.LogInfo($"[Clean-up] outside a door (loading a save?): {Describe(run)} · managed {ManagedMB()} MB · Unity {UnityMB()} MB · " +
+        string where = run.full ? "outside a door (loading a save?)" : run.why != null && run.why.StartsWith("sleep") ? "while sleeping" : "outside a door";
+        Plugin.Log.LogInfo($"[Clean-up] {where}: {Describe(run)} · managed {ManagedMB()} MB · Unity {UnityMB()} MB · " +
                            $"game process {ProcessMB()} MB");
     }
 
@@ -422,6 +463,36 @@ internal class DoorWatch : MonoBehaviour
                            $"GCs {GC.CollectionCount(0) - d.gcBefore} · managed {d.managedBefore} -> {ManagedMB()} MB · Unity {d.unityBefore} -> {UnityMB()} MB · " +
                            $"game process {d.processBefore} -> {ProcessMB()} MB");
         Settle.Start($"{d.fromZone ?? "?"} -> {toZone ?? "?"} (through black)");
+    }
+
+    // ¿La pantalla está del todo negra? La cortina de las puertas (UIFade) al 100 %, o el personaje durmiendo: la pantalla de
+    // dormir (UISleepFade, con su cama) ya tapó todo cuando EnergySystem.IsSleeping pasa a verdadero, y sigue así hasta que
+    // StopSleeping la quita. Solo se mira cuando hay una limpieza esperando negro (Cleanup.Request).
+    private bool AnyCurtainBlack()
+    {
+        if (!Cleanup.Waiting)
+            return false;
+        if (CurtainAlpha() >= Black)
+            return true;
+        if (noSleepInfo)
+            return false;
+        try
+        {
+            return Sleeping();
+        }
+        catch (Exception)
+        {
+            noSleepInfo = true; // esta versión del juego no tiene EnergySystem: no se vuelve a preguntar
+            return false;
+        }
+    }
+
+    private bool noSleepInfo;
+
+    private static bool Sleeping()
+    {
+        EnergySystem energy = MainGame.Instance != null && MainGame.PlayerData != null ? MainGame.PlayerData.energySystem : null;
+        return energy != null && energy.IsSleeping && !energy.IsInTransitionBetweenSleep;
     }
 
     // Opacidad de la cortina negra del juego (0 = se ve el juego, 1 = negro). La cortina se toma de la lista de

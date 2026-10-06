@@ -37,7 +37,7 @@ Walk into a door and you go through just as you reach it. Where the floor ends b
 The first time in a while that you go through a door, the game loads the pieces of the other side before it lets you move. When you get near a door, Instant Transitions loads its other side ahead of time, out of view and a little each frame, so the cut never waits.
 
 [b]No freeze at doors[/b]
-Before version 1.008, the game ran a full memory clean-up on every door, with the screen black: it unloaded unused assets, collected garbage and searched everything loaded, 24 times over, for editor-only components. That was most of the wait. Since 1.008 the game only does it when a door leads to another scene. This mod never does it all at once at a door: every third door removes one of the 24 kinds of editor-only components (about 30 ms), so nothing piles up, and unused assets are unloaded at a door only now and then: when memory has grown a lot, or every 10 minutes at a door that leads to another scene. Loading a save always does the full clean-up.
+Before version 1.008, the game ran a full memory clean-up on every door, with the screen black: it unloaded unused assets, collected garbage and searched everything loaded, 24 times over, for editor-only components. That was most of the wait. Since 1.008 the game only does it when a door leads to another scene. This mod never does it all at once at a door: every third door removes one of the 24 kinds of editor-only components (about 30 ms), so nothing piles up. Unloading unused assets (1 to 3 seconds in a long game) is only done under a black screen: when you go to sleep, at a door that goes through black, or while a save loads. Doors and map travel stay instant: only if you go a long time without any of those, memory has grown a lot and your PC is really running short of it, one door goes through black once and does it there. Loading a save always does the full clean-up.
 
 [b]Fast first visits[/b]
 While a save loads, the game preloads a fixed list of the pieces places are drawn with. Anything not on that list (for example, what you built in your yard) loads from disk the first time you see it, in one frozen frame. Instant Transitions preloads the rest of the map near the end of the loading screen, several at a time. A line under the loading bar shows the progress. It uses about 500 MB more memory and is skipped on PCs with less than 7 GB of RAM.
@@ -72,7 +72,8 @@ In [b]BepInEx\config\verto13.gk2.instanttransitions.cfg[/b] (created the first t
 [*][b]HardCut[/b] (true): doors and map travel in the same scene cut with no black. false = a quick fade through black.
 [*][b]WalkIntoDoors[/b] (true): walk into doors to go through them. [b]WalkInKey[/b] (Ctrl + Shift + C) switches it while playing.
 [*][b]HideDoorPrompts[/b] (true): hides the "[E] Enter" over doors you can walk into. [b]PromptsKey[/b] (Ctrl + Shift + H) switches it while playing.
-[*][b]FullCleanupEveryMinutes[/b] (10) and [b]FullCleanupWhenMemoryGrowsMB[/b] (300): when a door unloads unused assets (about 0.3 s). Doors never run the game's full clean-up.
+[*][b]FullCleanupEveryMinutes[/b] (10) and [b]FullCleanupWhenMemoryGrowsMB[/b] (300): how often unused assets are unloaded (1 to 3 s in a long game), at the next black screen: when you sleep, at a door through black, or while a save loads. Doors never run the game's full clean-up.
+[*][b]FullCleanupAtAnyDoorWhenMemoryGrowsMB[/b] (1200) and [b]FullCleanupAtAnyDoorWhenGameUsesPercentOfRam[/b] (60): last resort. If none of those black screens comes, memory has grown this much and your PC is running short of it (the game holds that percentage of your RAM, or less than 1.5 GB is free), the next door goes through black once so the unload can happen under it.
 [*][b]FadeSeconds[/b] (0) and [b]BlackPauseSeconds[/b] (0): for the doors that still go through black; the game uses 0.3 and 0.3.
 [*][b]PreloadPlaces[/b] (true) and [b]PreloadMaxSeconds[/b] (20): the map preload while a save loads.
 [/list]
@@ -97,6 +98,11 @@ In [b]BepInEx\config\verto13.gk2.instanttransitions.cfg[/b] (created the first t
 [/list]
 
 [size=4][b][color=#ffd966]Release notes[/color][/b][/size]
+[b]0.10.2[/b]
+[list]
+[*]The gate of the zombie resurrection room (and any other gate or door that opens with an animation) could end up closed, blocking the way, while your save said it was open, so the game didn't even offer to open it. The map preload made the game hide it again right after opening it, and it showed up closed later. Since 0.10.2 the mod shows it again and sends its saved "open" order again. If it is closed in a game you already started, update and load your save again.
+[*]Unloading unused assets no longer freezes the picture at a door. In a long game it takes 1 to 3 seconds, and it used to happen at a cut door about once an hour. Now it only happens under a black screen: when you go to sleep, at a door that goes through black, or while a save loads. Doors and map travel stay instant: only if you go a long time without any of those, memory has grown 1200 MB and your PC is really running short of it (the game holds more than 60 % of your RAM, or less than 1.5 GB is free), one door goes through black once and does it there. New settings FullCleanupAtAnyDoorWhenMemoryGrowsMB (1200) and FullCleanupAtAnyDoorWhenGameUsesPercentOfRam (60).
+[/list]
 [b]0.10.1[/b]
 [list]
 [*]The map preload now runs before the game starts its morning scenes. Before, loading a save made the night before one (like Jack's first visit) could leave the screen black, and Jack never went to his boat. Another mod that makes the end of loading longer can still cause it.

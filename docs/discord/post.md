@@ -44,3 +44,14 @@ Download: https://www.nexusmods.com/graveyardkeeper2/mods/206
 ## Attachment
 
 `docs/images/walk-in.gif` (6.5 MB; Discord takes up to 10 MB without Nitro).
+
+## Update 0.10.2 (reply in the same thread)
+
+```
+Instant Transitions 0.10.2 is out:
+
+• The gate of the zombie resurrection room (or any gate that opens with an animation) could end up closed and block the way while your save said it was open. Since 0.10.2 the mod puts it back. If yours is closed, update and load the save again.
+• Unloading unused memory no longer freezes the picture at a door (1 to 3 s in a long game). It now happens while you sleep, at a door through black, or while a save loads.
+
+Download: https://www.nexusmods.com/graveyardkeeper2/mods/206
+```

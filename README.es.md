@@ -4,7 +4,7 @@
 
 Cada puerta de Graveyard Keeper 2 te pasa por una pantalla negra: cerca de un segundo desde la versión 1.008 del juego, y entre 1 y 2 segundos antes. Con **Instant Transitions** todo el mapa se siente como un solo lugar: **caminas hacia** una puerta y, en el mismo instante, estás del otro lado, todavía caminando. Sin pantalla negra, sin congelón, sin "[E] Entrar".
 
-> ⚠️ **Beta (0.10.1).** Las puertas, los viajes por el mapa y la carga están medidos y probados, y se revisaron todas las puertas del mapa. Si algo se siente raro, [repórtalo](#reportar-errores) con tu registro. Ayuda muchísimo.
+> ⚠️ **Beta (0.10.2).** Las puertas, los viajes por el mapa y la carga están medidos y probados, y se revisaron todas las puertas del mapa. Si algo se siente raro, [repórtalo](#reportar-errores) con tu registro. Ayuda muchísimo.
 
 ![Cruzando puertas: sin mods y luego con Instant Transitions](docs/images/walk-in.gif)
 
@@ -27,7 +27,7 @@ Cada puerta de Graveyard Keeper 2 te pasa por una pantalla negra: cerca de un se
 
 **Listo antes de llegar.** La primera vez en un rato que cruzas una puerta, el juego carga las piezas del otro lado antes de dejarte mover, y el corte tendría que esperarlo. Al acercarte a una puerta, Instant Transitions carga su otro lado por adelantado, fuera de cámara y un poco en cada cuadro, para que el corte nunca espere.
 
-**Sin congelón en las puertas.** Antes de la versión 1.008, el juego hacía una limpieza completa de memoria en cada puerta, con la pantalla en negro: liberaba recursos sin usar, recogía basura y buscaba 24 veces, por todo lo cargado, componentes que solo sirven en el editor. Eso era casi toda la espera. Desde la 1.008 el juego solo la hace cuando una puerta lleva a otra escena. Este mod nunca la hace toda de golpe en una puerta: cada tercera puerta quita uno de los 24 tipos de componentes de editor (unos 30 ms), así que nada se acumula, y los recursos sin usar se liberan en una puerta solo de vez en cuando: si la memoria creció mucho, o cada 10 minutos en una puerta que lleva a otra escena. Al cargar partida siempre se hace la limpieza completa.
+**Sin congelón en las puertas.** Antes de la versión 1.008, el juego hacía una limpieza completa de memoria en cada puerta, con la pantalla en negro: liberaba recursos sin usar, recogía basura y buscaba 24 veces, por todo lo cargado, componentes que solo sirven en el editor. Eso era casi toda la espera. Desde la 1.008 el juego solo la hace cuando una puerta lleva a otra escena. Este mod nunca la hace toda de golpe en una puerta: cada tercera puerta quita uno de los 24 tipos de componentes de editor (unos 30 ms), así que nada se acumula. Liberar los recursos sin usar (de 1 a 3 segundos en una partida larga) solo se hace con la pantalla en negro: al dormir, en una puerta que pasa por negro o mientras carga una partida. Las puertas y los viajes por el mapa siguen siendo instantáneos: solo si pasa mucho tiempo sin ninguna de esas, la memoria creció mucho y a tu PC de verdad le falta memoria, una puerta pasa por negro una vez y lo hace ahí. Al cargar partida siempre se hace la limpieza completa.
 
 **Primeras visitas rápidas.** Mientras carga una partida, el juego precarga una lista fija de las piezas con las que se dibujan los lugares. Lo que no está en esa lista (por ejemplo, lo que construiste en tu patio) se carga del disco la primera vez que lo ves, en un cuadro congelado. Instant Transitions precarga el resto del mapa casi al final de la pantalla de carga, varias piezas a la vez. Una línea bajo la barra de carga muestra el avance. Usa unos 500 MB más de memoria y se omite en PCs con menos de 7 GB de RAM.
 
@@ -94,8 +94,10 @@ Los ajustes están en `BepInEx\config\verto13.gk2.instanttransitions.cfg` (se cr
 | `WalkInKey` | `Ctrl + Shift + C` | Prende y apaga entrar caminando mientras juegas. |
 | `HideDoorPrompts` | `true` | Oculta el aviso "[E] Entrar" de las puertas a las que se entra caminando. |
 | `PromptsKey` | `Ctrl + Shift + H` | Muestra u oculta esos avisos mientras juegas. |
-| `FullCleanupEveryMinutes` | `10` | Cada cuánto una puerta por negro libera los recursos sin usar (unos 0.3 s). Las puertas nunca hacen la limpieza completa del juego. |
-| `FullCleanupWhenMemoryGrowsMB` | `300` | O antes, si la memoria creció esto. Las puertas con corte solo lo hacen al doble. |
+| `FullCleanupEveryMinutes` | `10` | Cada cuánto se liberan los recursos sin usar (de 1 a 3 s en una partida larga), en la siguiente pantalla negra: al dormir, en una puerta por negro o al cargar partida. Las puertas nunca hacen la limpieza completa del juego. |
+| `FullCleanupWhenMemoryGrowsMB` | `300` | O antes, si la memoria creció esto. |
+| `FullCleanupAtAnyDoorWhenMemoryGrowsMB` | `1200` | Último recurso. Si no llega ninguna de esas pantallas negras, la memoria creció esto y a tu PC le falta memoria (el ajuste siguiente, o menos de 1.5 GB de RAM libres), la siguiente puerta pasa por negro una vez para liberar ahí. |
+| `FullCleanupAtAnyDoorWhenGameUsesPercentOfRam` | `60` | El juego cuenta como «usa mucha memoria» cuando tiene este porcentaje de la RAM de tu PC. En una PC con RAM de sobra nunca pasa y las puertas siguen instantáneas. |
 | `FadeSeconds` | `0` | Duración de cada fundido en las puertas que todavía pasan por negro. `0` = sin fundido (el juego: 0.3). |
 | `BlackPauseSeconds` | `0` | Pausa en negro antes de moverte, en esas puertas (el juego: 0.3). |
 | `PreloadPlaces` | `true` | Precargar todo el mapa al cargar partida. |

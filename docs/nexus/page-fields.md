@@ -146,3 +146,23 @@ text, which has a blank line there, gives the usual result. Editing the text tha
 it again eats one more each time, until the lists touch the next heading. To change a sentence in place, put one line
 break back after every `[/list]` before saving (`text.replace(/\[\/list\]/g, '[/list]\n')`): the saved text is then
 the same as before, except for that sentence.
+
+## Changelog 0.10.2
+
+- The gate of the zombie resurrection room (and any other gate or door that opens with an animation) could end up closed, blocking the way, while your save said it was open. The map preload made the game hide it again right after opening it. Since 0.10.2 the mod shows it again and sends its saved "open" order again. If it is closed in a game you already started, update and load your save again.
+- Unloading unused assets no longer freezes the picture at a door. It now only happens under a black screen: when you go to sleep, at a door that goes through black, or while a save loads. Doors and map travel stay instant: only if you go a long time without any of those, memory has grown 1200 MB and your PC is really running short of it (the game holds more than 60 % of your RAM, or less than 1.5 GB is free), one door goes through black once and does it there. New settings FullCleanupAtAnyDoorWhenMemoryGrowsMB (1200) and FullCleanupAtAnyDoorWhenGameUsesPercentOfRam (60).
+
+Where the first one came from: a Nexus comment (2026-10-05, "the door to the zombie resurrection room was
+closed and unable to be opened ... when I disabled and reloaded it was open again"), the same thing the author saw in
+his own game on 2026-10-04. Reproduced with the test probe on the author's save: with 0.10.1 the gate ends in
+`iron_gate_close_state`; without the mod, or with `PreloadPlaces = false`, it ends open; with 0.10.2 it ends open.
+Workaround until the update: `PreloadPlaces = false` in the `[Loading]` section of the .cfg (the loading screen gets
+~5 s shorter and first visits to some places load slower), then load the save again.
+
+The upload form (all three places, same wording): the description's "Release notes" section got a 0.10.2 entry on top
+(`docs/nexus/description.bbcode`), the changelog box of the file takes the two lines above, and the Settings list has
+the new setting. The file is `InstantTransitions-0.10.2.zip` ("Update existing file" on "Instant Transitions").
+
+Reply to that comment:
+
+> Thank you for telling me! You found a real bug and I could reproduce it. With the map preload on, the game could hide that gate again right after opening it, so it showed up closed (and blocked you) while your save said it was open. Since 0.10.2 the mod shows it again and sends its "open" order again. If yours is closed, update and load your save again. If you can't update yet: in BepInEx\config\verto13.gk2.instanttransitions.cfg, under [Loading], set PreloadPlaces = false, and load the save again.

@@ -70,12 +70,19 @@ internal static class QuickDoors
     private static bool Active => active && Time.realtimeSinceStartup < activeUntil;
 
     // Terminó la puerta (DoorWatch): los fundidos que vengan después ya son del juego.
-    internal static void DoorEnded() => active = false;
+    internal static void DoorEnded()
+    {
+        active = false;
+        pendingCleanup = null;
+    }
+
+    private static string pendingCleanup; // esta puerta pasa por negro para liberar recursos sin usar debajo (Cleanup.Request)
 
     private static void BeforeTeleport(TeleportDataBase teleportData)
     {
         LastTeleportAt = Time.realtimeSinceStartup;
         Cut.LastUsed = false;
+        pendingCleanup = null;
         active = false;
         LastWasQuick = false;
         LastWhy = "";
@@ -88,9 +95,17 @@ internal static class QuickDoors
             LastWasQuick = true;
             WalkIn.CameThrough(teleportData.GetDestinationId());
             teleportData.delayInFade = Mathf.Min(teleportData.delayInFade, Mathf.Max(0f, Plugin.BlackPauseSeconds.Value));
-            // Corte directo: en la misma escena, sin negro; el juego lo mueve sin fundido y Cut tapa los cuadros del cambio.
-            if (SafeSameScene(teleportData) && Cut.Begin())
-                teleportData.donNotFade = true;
+            if (SafeSameScene(teleportData))
+            {
+                // Liberar recursos sin usar tarda 1 a 3 s y no puede hacerse a la vista: si toca (con corte, solo cuando ya pasó
+                // mucho sin dormir ni cargar; sin corte, la puerta ya pasa por negro), esta puerta pasa por negro y va debajo.
+                string due = Plugin.HardCut.Value ? Cleanup.EmergencyDue() : Cleanup.DueAtBlack();
+                if (due != null)
+                    pendingCleanup = due;
+                // Corte directo: en la misma escena, sin negro; el juego lo mueve sin fundido y Cut tapa los cuadros del cambio.
+                else if (Cut.Begin())
+                    teleportData.donNotFade = true;
+            }
         }
         catch (Exception e)
         {
@@ -121,11 +136,12 @@ internal static class QuickDoors
     }
 
     // Un fundido del juego nunca debe fallar por culpa del mod: si algo sale mal, el fundido queda como el del juego.
-    private static void ShortFadeIn(UIBasicFade __instance, ref float fadeTime)
+    private static void ShortFadeIn(UIBasicFade __instance, ref float fadeTime, ref Action onComplete)
     {
         try
         {
             Shorten(__instance, ref fadeTime, last: false);
+            HoldForCleanup(__instance, ref onComplete);
         }
         catch (Exception e)
         {
@@ -145,6 +161,18 @@ internal static class QuickDoors
             active = false;
             Plugin.Log.LogDebug("Quick fades: " + e.Message);
         }
+    }
+
+    // Una puerta que pasa por negro para liberar recursos: cuando la cortina termina de oscurecer, lo que el juego seguía haciendo
+    // (mover al jugador, aclarar) espera a que la limpieza, ya con la pantalla negra, termine.
+    private static void HoldForCleanup(UIBasicFade fade, ref Action onComplete)
+    {
+        if (pendingCleanup == null || !Active || !(fade is UIFade))
+            return;
+        string why = pendingCleanup;
+        pendingCleanup = null;
+        Action original = onComplete;
+        onComplete = () => Cleanup.Request(why, "door", original);
     }
 
     // Solo la cortina negra de las puertas (UIFade); dormir y los textos en negro son otras.

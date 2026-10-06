@@ -10,22 +10,26 @@ namespace InstantTransitions;
 // completa (liberar recursos sin usar, recolección de basura y 24 búsquedas de "componentes de editor" por todo
 // lo cargado) que congela el juego unos 0.75 s. La recolección de basura del juego ya es por partes (Unity con
 // GC incremental), así que en la puerta no hace falta: aquí una puerta nunca hace la limpieza completa. Cada tercera
-// puerta quita un solo tipo de componente de editor (unos 30 ms) y, cuando toca (cada tantos minutos o cuando la
-// memoria creció), una puerta libera los recursos sin usar (unos 0.3 s). Al cargar una partida, la limpieza completa
-// se hace como siempre. Cada puerta queda medida en el log (cuánto tardó cada parte y cuánta memoria usa el juego),
-// para comprobar que no sale más lenta ni gasta más memoria.
+// puerta quita un solo tipo de componente de editor (unos 30 ms). Liberar los recursos sin usar (1 a 3 s en una partida
+// larga) solo se hace con la pantalla negra: al dormir, en una puerta que pasa por negro (también la que pasa por negro a
+// propósito cuando ya pasó mucho sin ninguna otra ocasión) y al cargar una partida, que hace la limpieza completa como
+// siempre. Cada puerta queda medida en el log (cuánto tardó cada parte y cuánta memoria usa el juego), para comprobar que no
+// sale más lenta ni gasta más memoria. Y ChunkGuard repara lo que la precarga deja torcido en el sistema de zonas del juego
+// (una reja ya abierta que quedaba cerrada).
 [BepInPlugin(Guid, Name, Version)]
 public sealed class Plugin : BaseUnityPlugin
 {
     public const string Guid = "verto13.gk2.instanttransitions";
     public const string Name = "Instant Transitions";
-    public const string Version = "0.10.1";
+    public const string Version = "0.10.2";
 
     internal static ManualLogSource Log;
     internal static ConfigEntry<bool> Enabled;
     internal static ConfigEntry<KeyboardShortcut> ToggleKey;
     internal static ConfigEntry<float> FullEveryMinutes;
     internal static ConfigEntry<int> FullWhenGrownMB;
+    internal static ConfigEntry<int> EmergencyMB;
+    internal static ConfigEntry<int> EmergencyRamPercent;
     internal static ConfigEntry<float> FadeSeconds;
     internal static ConfigEntry<float> BlackPauseSeconds;
     internal static ConfigEntry<bool> WalkIntoDoors;
@@ -47,11 +51,19 @@ public sealed class Plugin : BaseUnityPlugin
             "Turns Instant Transitions on and off while playing, to compare doors with and without it. A notice shows the new state.");
         FullEveryMinutes = Config.Bind("Doors", "FullCleanupEveryMinutes", 10f,
             "Doors never do the game's full clean-up: every third door removes one kind of its editor-only components instead. " +
-            "Unloading unused assets (the part that frees memory, about 0.3 s) happens at a door that goes through black " +
-            "once this many minutes have passed since the last time. Doors with the cut (no black) only do it when memory " +
-            "grew twice FullCleanupWhenMemoryGrowsMB, so it doesn't show; loading a save always does it.");
+            "Unloading unused assets (the part that frees memory, 1 to 3 s in a long game) is done only while the screen is " +
+            "black: when you go to sleep, at a door that goes through black, or while a save loads. It happens at the first " +
+            "of those once this many minutes have passed since the last time. Doors with the cut (no black) never do it.");
         FullWhenGrownMB = Config.Bind("Doors", "FullCleanupWhenMemoryGrowsMB", 300,
             "Or sooner: once the game's memory has grown this much (MB) since the last time unused assets were unloaded.");
+        EmergencyMB = Config.Bind("Doors", "FullCleanupAtAnyDoorWhenMemoryGrowsMB", 1200,
+            "Last resort. If you go a long time without sleeping, loading or using a door that goes through black, the game's " +
+            "memory has grown this much (MB) since the last unload, AND your PC is running short of memory (see " +
+            "FullCleanupAtAnyDoorWhenGameUsesPercentOfRam, or less than 1.5 GB of RAM is free), the next door goes through black " +
+            "once so the unload can happen under it, instead of freezing the picture at a cut. Doors and map travel stay " +
+            "instant otherwise.");
+        EmergencyRamPercent = Config.Bind("Doors", "FullCleanupAtAnyDoorWhenGameUsesPercentOfRam", 60,
+            "For the last resort above: the game counts as using a lot of memory when it holds this percentage of your PC's RAM.");
         FadeSeconds = Config.Bind("Doors", "FadeSeconds", 0f,
             "Length of each fade (to black and back) on the doors that still go through black: doors to another scene, and " +
             "every door and map trip when HardCut is false. 0 = no fade (about 0.1 s). The game: 0.3.");
@@ -93,9 +105,11 @@ public sealed class Plugin : BaseUnityPlugin
         // Cada parte arranca por su lado: si a una le falta algo del juego (otra versión, como la 1.004.2), esa se
         // queda apagada y el log dice por qué, y las demás siguen. Antes una sola clase faltante tumbaba el mod entero.
         StartPart("the memory clean-up on doors", () => Cleanup.Apply(harmony));
+        StartPart("the memory clean-up while you sleep", () => Cleanup.ApplySleep(harmony));
         StartPart("the quick fades", () => QuickDoors.Apply(harmony));
         StartPart("hiding the door prompts", () => DoorPrompts.Apply(harmony));
         StartPart("the map preload while a save loads", () => Preload.Apply(harmony));
+        StartPart("keeping gates and other animated objects as the game has them", () => ChunkGuard.Apply(harmony));
         StartPart("the door log, loading line and preload", () => gameObject.AddComponent<DoorWatch>());
     }
 

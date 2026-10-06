@@ -33,7 +33,7 @@ internal static class Cleanup
     {
         public bool full;       // los tres pasos (al cargar una partida)
         public bool unloadOnly; // en una puerta, cuando toca: solo liberar los recursos sin usar
-        public string why;      // por qué ("10 min since the last one", "memory +312 MB", "loading")
+        public string why;      // por qué ("10 min since the last one", "memory +312 MB", "loading"; debajo de negro, "sleep: ..." o "door: ...")
         public double unloadMs, gcMs, stripMs;
         public int stripped = -1; // componentes de editor destruidos (-1 = no se contaron)
         public string oneType;    // en una puerta: el tipo de componente de editor que se buscó esta vez (Tidy)
@@ -80,7 +80,7 @@ internal static class Cleanup
     {
         float minutes = Math.Max(0f, Plugin.FullEveryMinutes.Value - (Time.realtimeSinceStartup - lastFullAt) / 60f);
         long mb = Math.Max(0L, Plugin.FullWhenGrownMB.Value - (MemoryMB() - memoryAtLastFull));
-        return $"next unload in {minutes:0.0} min or +{mb} MB";
+        return $"next unload, at the next sleep or black screen, after {minutes:0.0} min or +{mb} MB";
     }
 
     private const string Loading = "loading";
@@ -91,6 +91,13 @@ internal static class Cleanup
         // vigilante todavía no vio (la cortina ya estaba negra) sigue siendo puerta: lo dice el parche de Teleport.
         if (!DoorWatch.InDoor && Time.realtimeSinceStartup - QuickDoors.LastTeleportAt > 10f)
             return Loading;
+        return DueAtBlack();
+    }
+
+    // ¿Toca liberar recursos sin usar en un momento de pantalla negra (dormir, una puerta por negro)? Pasaron N minutos o la
+    // memoria creció M MB desde la última vez.
+    internal static string DueAtBlack()
+    {
         if (!anyFull)
             return "first one";
         float minutes = (Time.realtimeSinceStartup - lastFullAt) / 60f;
@@ -102,15 +109,27 @@ internal static class Cleanup
         return null;
     }
 
-    // En una puerta con corte, la vista de antes queda congelada mientras se limpia: liberar los recursos sin usar (~0.3 s)
-    // se vería como un tirón cada 10 minutos. Ahí solo se libera si la memoria creció el doble de lo normal; si no, espera
-    // a una puerta por negro, un viaje por el mapa o cargar una partida (las únicas veces que el juego limpia).
-    private static string DueAtCut()
+    // En una puerta con corte, la vista de antes queda congelada mientras se limpia, y liberar los recursos sin usar tarda
+    // 1.3 a 2.9 s en una partida larga (medido: nueve veces en 9.5 h, y cada una se veía como un tirón en la puerta). Por eso
+    // ahí no se libera nunca: espera a un momento con la pantalla negra (dormir, una puerta por negro, cargar). Las puertas y
+    // los viajes por el mapa son justo lo que este mod vuelve instantáneo: solo si de verdad hace falta (la memoria creció
+    // EmergencyMB desde la última vez Y a la PC le falta memoria) esa puerta no corta, pasa por negro y la limpieza va debajo
+    // (QuickDoors.BeforeTeleport). Sin falta de memoria no se hace: el juego sin mod tampoco libera nada dentro del mapa.
+    internal const long TightFreeMB = 1500;
+
+    internal static string EmergencyDue()
     {
         if (!anyFull)
             return null; // recién recargado el mod: no se sabe cuánto creció
         long grown = MemoryMB() - memoryAtLastFull;
-        return grown >= 2L * Plugin.FullWhenGrownMB.Value ? $"memory +{grown} MB" : null;
+        if (grown < Plugin.EmergencyMB.Value)
+            return null;
+        long ram = SystemInfo.systemMemorySize, game = DoorWatch.ProcessMB(), free = DoorWatch.FreeMB();
+        bool bigShare = ram > 0 && game > 0 && game * 100 >= ram * Plugin.EmergencyRamPercent.Value;
+        bool littleFree = free >= 0 && free < TightFreeMB;
+        if (!bigShare && !littleFree)
+            return null; // la PC tiene memoria de sobra
+        return $"memory +{grown} MB, the game uses {game} of {ram} MB and {free} MB are free, no black moment since";
     }
 
     private static bool Instead(ref UniTask __result)
@@ -170,27 +189,21 @@ internal static class Cleanup
     }
 
     // Una puerta sin la limpieza del juego: con el corte directo el juego mueve al jugador sin fundido y no llama a
-    // HiddenOptimization. Aquí va nuestra parte, igual que en una puerta normal (un tipo de componente de editor cada
-    // tercera puerta; liberar recursos sin usar cuando toca, sin esperar a que termine: Unity lo hace en segundo plano).
+    // HiddenOptimization. Aquí va nuestra parte, igual que en una puerta normal: un tipo de componente de editor cada tercera
+    // puerta (unos 40 ms). Liberar recursos sin usar NO se hace en un corte (congelaría la vista de antes): ver EmergencyDue.
     internal static void AtSilentDoor()
     {
         if (!Plugin.Enabled.Value)
             return;
         try
         {
-            string why = DueAtCut();
-            Run run = new Run { why = why };
-            if (++doorsSinceStrip >= 3 || why != null)
+            Run run = new Run();
+            if (++doorsSinceStrip >= 3)
             {
                 doorsSinceStrip = 0;
                 Tidy.StripNextType(run);
             }
-            if (why != null)
-            {
-                run.unloadOnly = true;
-                Timed(run); // termina sola (FinishUnload anota en el log)
-            }
-            else if (run.oneType != null)
+            if (run.oneType != null)
                 Plugin.Log.LogInfo($"[Clean-up] at a cut door: {run.oneType}: {run.oneTypeFound} removed in {run.oneTypeMs:0} ms; {NextFull()}");
         }
         catch (Exception e)
@@ -199,14 +212,125 @@ internal static class Cleanup
         }
     }
 
+    // ---- Liberar recursos sin usar debajo de una pantalla negra ----------------------------------------------------------
+    // Resources.UnloadUnusedAssets recorre todo lo cargado en un solo cuadro (1.3 a 2.9 s en una partida larga). Con la
+    // pantalla ya negra no se nota: dormir y las puertas que pasan por negro. Se pide (Request) y DoorWatch avisa cada cuadro
+    // si hay negro (BlackTick); con dos cuadros ya dibujados en negro, se hace. Si lo que se pidió fue desde una puerta, lo que
+    // el juego seguía haciendo (volver a aclarar) espera a que termine.
+    private const float WaitForBlackSeconds = 8f;
+    private static string requested;
+    private static float requestedAt;
+    private static Action held;
+    private static int blackFrames;
+
+    internal static bool Waiting => requested != null;
+
+    internal static void Request(string why, string where, Action hold = null)
+    {
+        if (DoorWatch.Host == null)
+        {
+            hold?.Invoke(); // nadie va a mirar si hay negro: que el juego siga como siempre
+            return;
+        }
+        if (requested == null)
+        {
+            requested = $"{where}: {why}";
+            requestedAt = Time.unscaledTime;
+            blackFrames = 0;
+        }
+        if (hold != null)
+            held += hold;
+    }
+
+    // Cada cuadro (DoorWatch.Update). black = la cortina negra del juego (o la de dormir) ya está del todo negra.
+    internal static void BlackTick(bool black)
+    {
+        if (requested == null)
+            return;
+        try
+        {
+            if (Time.unscaledTime - requestedAt > WaitForBlackSeconds)
+            {
+                Plugin.Log.LogInfo($"[Clean-up] no black screen within {WaitForBlackSeconds:0} s for the request ({requested}); not done now.");
+                Release(null);
+                return;
+            }
+            blackFrames = black ? blackFrames + 1 : 0;
+            if (blackFrames < 2)
+                return;
+            string why = requested;
+            Release(new Run { unloadOnly = true, why = why });
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.LogWarning("Clean-up under black: " + e.Message);
+            Release(null);
+        }
+    }
+
+    // Termina la petición: con una corrida, la hace y suelta lo que esperaba cuando acabe; sin ella, lo suelta ya.
+    private static void Release(Run run)
+    {
+        Action after = held;
+        requested = null;
+        held = null;
+        blackFrames = 0;
+        if (run == null)
+        {
+            after?.Invoke();
+            return;
+        }
+        Timed(run, after);
+    }
+
+    // Al dormir (el fundido de dormir ya terminó: EnergySystem.IsSleeping pasa a verdadero) se pide la limpieza si toca.
+    internal static void ApplySleep(Harmony harmony)
+    {
+        MethodInfo setter = AccessTools.PropertySetter(typeof(EnergySystem), "IsSleeping");
+        if (setter == null)
+        {
+            Plugin.Log.LogWarning("EnergySystem.IsSleeping not found (game update?): nothing is cleaned while you sleep.");
+            return;
+        }
+        harmony.Patch(setter, postfix: new HarmonyMethod(typeof(Cleanup), nameof(SleepChanged)));
+    }
+
+    private static void SleepChanged(bool value)
+    {
+        if (!value || !Plugin.Enabled.Value)
+            return;
+        try
+        {
+            string why = DueAtBlack();
+            if (why != null)
+                Request(why, "sleep");
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.LogWarning("Clean-up at sleep: " + e.Message);
+        }
+    }
+
     private static double Ms(long from, long to) => (to - from) * 1000.0 / Stopwatch.Frequency;
 
-    private static UniTask Timed(Run run)
+    private static UniTask Timed(Run run, Action extra = null)
     {
         var done = new UniTaskCompletionSource();
         // Al cargar una partida aquí NO se puede alargar nada: el juego ya disparó "después de dormir" y sus escenas ya
         // corren (ver Preload). La precarga del mapa va antes, en Preload.BeforeAfterLoad.
-        Action after = () => done.TrySetResult();
+        // extra: lo que esperaba a esta limpieza (el final del fundido de una puerta), siempre se suelta, pase lo que pase.
+        Action after = () =>
+        {
+            done.TrySetResult();
+            try
+            {
+                extra?.Invoke();
+            }
+            catch (Exception e)
+            {
+                Plugin.Log.LogWarning("Clean-up (what was waiting): " + e.Message);
+            }
+        };
         if (run.why == Loading)
             DoorWatch.LoadCleanupAt = Stopwatch.GetTimestamp(); // para el desglose de la pantalla de carga
         long t0 = Stopwatch.GetTimestamp();
@@ -223,7 +347,7 @@ internal static class Cleanup
             }
             finally
             {
-                done.TrySetResult(); // la puerta sigue pase lo que pase
+                after(); // la puerta sigue pase lo que pase
             }
             return done.Task;
         }
